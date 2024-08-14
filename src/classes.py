@@ -1,5 +1,6 @@
 import datetime
 
+#Perhaps base url can be built with a method in the ERDDAP class so we can choose the data type we want. 
 class ERDDAP:
     def __init__(self, longitude, latitude, time, station, wmo_platform_code, start_time, end_time):
         self.base_url = 'https://coastwatch.pfeg.noaa.gov/erddap/tabledap/pmelTaoDySst.geoJson'
@@ -22,3 +23,7 @@ class ERDDAP:
     @staticmethod
     def get_current_time_iso():
         return datetime.datetime.now().isoformat()
+    
+#Example station
+
+ 

@@ -1,0 +1,1 @@
+#this file will read a config file, check for updates, and run the program.
