@@ -1,12 +1,16 @@
 #ERDDAP stuff is handled here with the ERDDAPHandler class. 
+import sys, os, requests, datetime 
 
-import datetime
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from src import glob_var as gv
 
+
+#Currently hardcoded for tabledap.
 class ERDDAPHandler:
     def __init__(self, datasetid, fileType, longitude, latitude, time, station, wmo_platform_code, start_time, end_time):
         self.base_url = 'https://coastwatch.pfeg.noaa.gov/erddap/tabledap/'
         self.datasetid = datasetid
-        self.filetype = fileType
+        self.fileType = fileType
         self.longitude = longitude
         self.latitude = latitude
         self.time = time
@@ -15,21 +19,62 @@ class ERDDAPHandler:
         self.start_time = start_time
         self.end_time = end_time
 
-    def generate_url(self):
+    def generate_url(self) -> str:
         url = (
-            f"{self.base_url}{self.datasetid}.{self.filetype}?"
+            f"{self.base_url}{self.datasetid}.{self.fileType}?"
             f"{self.longitude},{self.latitude},"
             f"{self.time},{self.station},{self.wmo_platform_code},"
             f"T_25&time%3E={self.start_time}Z&time%3C={self.end_time}Z"
         )
         print(f"Generated URL: {url}")
         return url
+    
+    #More checks can be added here. Be mindful of redundancy, the response code can also indicate valid arguments.
+
+    def argCheck(self, fileType: str) -> bool:
+        for item in gv.validFileTypes:
+            if fileType == item:
+                return True
+            else:
+                return False
+    
+    @staticmethod
+    def updateObjectfromParams(erddapObject: "ERDDAPHandler", params: dict) -> None:
+        for key, value in params.items():
+            setattr(erddapObject, key, value)
+
+    # I don't like how this function looks. 
+    # We may want to parse the response code and message from the response text instead of letting the library grab it  
+    @staticmethod
+    def return_response(generatedUrl: str) -> dict:
+        try:
+            response = requests.get(generatedUrl)
+            response.raise_for_status() 
+            return {
+                "status_code": response.status_code,
+                "message": response.text  
+            }
+        except requests.exceptions.HTTPError as http_err:
+            error_message = response.text if response is not None else str(http_err)
+            print(f"HTTP error occurred: {http_err}")
+            return {
+                "status_code": response.status_code,
+                "message": error_message
+            }
+        except Exception as err:
+            print(f"Other error occurred: {err}")
+            return {
+                "status_code": None,
+                "message": f"Other error occurred: {err}"
+            }
 
     @staticmethod
     def get_current_time():
         return datetime.datetime.now().isoformat()
     
-#Below we can specify different configurations for the ERDDAP object. 
+# Below we can specify different configurations for the ERDDAP object. 
+
+# Since lat/lon and time are essentially default parameters, we can set them here.
 tabledapDefault = ERDDAPHandler(
     datasetid = None,
     fileType = None,

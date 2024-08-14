@@ -5,28 +5,32 @@ from src.utils import OverwriteFS
 from src import erddap_client as ec
 
 def main():
-    print('Main function for testing')
+
+    #Get tabledap object
     tabledapDefaultTest = ec.tabledapDefault
+
+    #Get the time. This is the only dynamic parameter we have to test with right now.
     thetime = ec.ERDDAPHandler.get_current_time()
 
-    #Testing with random station
+    #Testing with 42G01
     testParams = {
     "datasetid": "gcoos_42G01",
-    "fileType": "geoJson",
+    "fileType": "json",
     "station": "42G01",
     "wmo_platform_code": "42G01",
-    "start_time": "2023-05-25T03:00:00",
+    "start_time": "2024-05-25T00:00:00",
     "end_time": thetime
     }
 
-    tabledapDefaultTest.datasetid = testParams["datasetid"]
-    tabledapDefaultTest.filetype = testParams["fileType"]
-    tabledapDefaultTest.station = testParams["station"]
-    tabledapDefaultTest.wmo_platform_code = testParams["wmo_platform_code"]
-    tabledapDefaultTest.start_time = testParams["start_time"]
-    tabledapDefaultTest.end_time = testParams["end_time"]
+    #put in tabledap object
+    ec.ERDDAPHandler.updateObjectfromParams(tabledapDefaultTest, testParams)
 
+    #Generate the URL
     generated_url = tabledapDefaultTest.generate_url()
+
+    #Print the response
+    response = ec.ERDDAPHandler.return_response(generated_url)
+    print(response["message"])
 
 
 if __name__ == '__main__':

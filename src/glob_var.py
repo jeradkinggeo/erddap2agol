@@ -1,4 +1,4 @@
-#This dictionary is how we will keep track of the urls and item ids for a given dataset
+#This dictionary very well may be useless
 DataDictionary = {
     "Dataset1": {
         "DataName": "Dataset1",
@@ -6,3 +6,14 @@ DataDictionary = {
         "ItemID": "insert item id here"
         }
 }
+
+#Check user provided arguments against this list of valid tabledap file types
+validFileTypes = [
+    "asc", "csv", "csvp", "csv0", "dataTable", "das",
+    "dds", "dods", "esriCsv", "fgdc", "geoJson", "graph",
+    "help", "html", "htmlTable", "iso19115", "itx", "json",
+    "jsonlCSV1", "jsonlCSV", "jsonlKVP", "mat", "nc", "ncHeader",
+    "ncCF", "ncCFHeader", "ncCFMA", "ncCFMAHeader", "nccsv", "nccsvMetadata",
+    "ncoJson", "odvTxt", "subset", "tsv", "tsvp", "tsv0",
+    "wav", "xhtml"
+]
