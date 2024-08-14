@@ -2,13 +2,31 @@ import sys
 import os
 from arcgis.gis import GIS
 from src.utils import OverwriteFS
-from src import erddap_client as er
+from src import erddap_client as ec
 
 def main():
     print('Main function for testing')
-    out = er.ERDDAPHandler.get_current_time()
-    print(out)
-    er.ERDDAPHandler.tabledapDefault()
+    tabledapDefaultTest = ec.tabledapDefault
+    thetime = ec.ERDDAPHandler.get_current_time()
+
+    #Testing with random station
+    testParams = {
+    "datasetid": "gcoos_42G01",
+    "fileType": "geoJson",
+    "station": "42G01",
+    "wmo_platform_code": "42G01",
+    "start_time": "2023-05-25T03:00:00",
+    "end_time": thetime
+    }
+
+    tabledapDefaultTest.datasetid = testParams["datasetid"]
+    tabledapDefaultTest.filetype = testParams["fileType"]
+    tabledapDefaultTest.station = testParams["station"]
+    tabledapDefaultTest.wmo_platform_code = testParams["wmo_platform_code"]
+    tabledapDefaultTest.start_time = testParams["start_time"]
+    tabledapDefaultTest.end_time = testParams["end_time"]
+
+    generated_url = tabledapDefaultTest.generate_url()
 
 
 if __name__ == '__main__':
@@ -44,5 +62,6 @@ if __name__ == '__main__':
 
 # #OverwriteFS.overwriteFeatureService(item_id, update_url)
 
-# #https://coastwatch.pfeg.noaa.gov/erddap/tabledap/pmelTaoDySst.geoJson?longitude,latitude,time,station,wmo_platform_code,T_25&time%3E=2015-05-23T12:00:00Z&time%3C=2015-05-31T12:00:00Z
+#update_url = 'https://coastwatch.pfeg.noaa.gov/erddap/tabledap/gcoos_42G01.geoJson?&time%3E=2024-01-01T00:00:00Z&time%3C=2024-01-01T00:00:00Z
+
 #---------------------------------------------------------------
