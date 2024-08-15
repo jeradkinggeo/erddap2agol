@@ -3,6 +3,7 @@ import os
 from arcgis.gis import GIS
 from src.utils import OverwriteFS
 from src import erddap_client as ec
+import src.glob_var as gv
 
 def main():
 
@@ -13,14 +14,16 @@ def main():
     thetime = ec.ERDDAPHandler.get_current_time()
 
     #Testing with 42G01
-    testParams = {
+    testParams =  {
     "datasetid": "gcoos_42G01",
-    "fileType": "json",
+    "fileType": "geoJson",
     "station": "42G01",
     "wmo_platform_code": "42G01",
     "start_time": "2024-05-25T00:00:00",
-    "end_time": thetime
+    "end_time": "2024-05-28T00:00:00"
     }
+       
+    ec.ERDDAPHandler.argCheck(testParams["fileType"])
 
     #put in tabledap object
     ec.ERDDAPHandler.updateObjectfromParams(tabledapDefaultTest, testParams)

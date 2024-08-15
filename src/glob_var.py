@@ -1,10 +1,12 @@
-#This dictionary very well may be useless
-DataDictionary = {
-    "Dataset1": {
-        "DataName": "Dataset1",
-        "ERDDAPUrl": "https://erddap.gcoos.org/erddap/tabledap/gcoos_42G01.htmlTable?time%2Clatitude%2Clongitude%2Cplatform%2Ccrs%2Cdepth%2Cwater_temperature_instrument_0%2Cocean_currents_instrument_0%2Csea_surface_temperature_0&time%3E=2024-08-06T00%3A00%3A00Z&time%3C=2024-08-10T13%3A36%3A00Z",
-        "ItemID": "insert item id here"
-        }
+TestParamsDict = {
+    "42G01":  {
+    "datasetid": "gcoos_42G01",
+    "fileType": "json",
+    "station": "42G01",
+    "wmo_platform_code": "42G01",
+    "start_time": "2024-05-25T00:00:00",
+    "end_time": "2024-05-28T00:00:00"
+    }
 }
 
 #Check user provided arguments against this list of valid tabledap file types

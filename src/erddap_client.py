@@ -5,10 +5,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src import glob_var as gv
 
 
-#Currently hardcoded for tabledap.
+#Currently hardcoded for tabledap and gcoos2.
 class ERDDAPHandler:
     def __init__(self, datasetid, fileType, longitude, latitude, time, station, wmo_platform_code, start_time, end_time):
-        self.base_url = 'https://coastwatch.pfeg.noaa.gov/erddap/tabledap/'
+        self.base_url = 'https://erddap2.gcoos.org/erddap/tabledap/'
         self.datasetid = datasetid
         self.fileType = fileType
         self.longitude = longitude
@@ -19,24 +19,26 @@ class ERDDAPHandler:
         self.start_time = start_time
         self.end_time = end_time
 
+    #Do not ever touch this again.
     def generate_url(self) -> str:
         url = (
             f"{self.base_url}{self.datasetid}.{self.fileType}?"
-            f"{self.longitude},{self.latitude},"
-            f"{self.time},{self.station},{self.wmo_platform_code},"
-            f"T_25&time%3E={self.start_time}Z&time%3C={self.end_time}Z"
+            f"{self.longitude}%2C{self.latitude}%2C"
+            f"{self.time}"
+            f"&time%3E={self.start_time}&time%3E={self.end_time}Z"
         )
         print(f"Generated URL: {url}")
         return url
     
     #More checks can be added here. Be mindful of redundancy, the response code can also indicate valid arguments.
 
-    def argCheck(self, fileType: str) -> bool:
+    @staticmethod
+    def argCheck(fileType: str) -> bool:
         for item in gv.validFileTypes:
             if fileType == item:
                 return True
-            else:
-                return False
+        return False
+
     
     @staticmethod
     def updateObjectfromParams(erddapObject: "ERDDAPHandler", params: dict) -> None:
