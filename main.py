@@ -4,6 +4,8 @@ from arcgis.gis import GIS
 from src.utils import OverwriteFS
 from src import erddap_client as ec
 import src.glob_var as gv
+import pandas as pd
+from io import StringIO
 
 def main():
 
@@ -16,12 +18,14 @@ def main():
     #Testing with 42G01
     testParams =  {
     "datasetid": "gcoos_42G01",
-    "fileType": "geoJson",
-    "station": "42G01",
-    "wmo_platform_code": "42G01",
+    "fileType": "csv",
     "start_time": "2024-05-25T00:00:00",
     "end_time": "2024-05-28T00:00:00"
     }
+
+    additionals = ["sea_surface_temperature_0", "sea_water_speed_0", "sea_water_direction_0", "upward_sea_water_velocity_0"]
+
+
        
     ec.ERDDAPHandler.argCheck(testParams["fileType"])
 
@@ -29,11 +33,11 @@ def main():
     ec.ERDDAPHandler.updateObjectfromParams(tabledapDefaultTest, testParams)
 
     #Generate the URL
-    generated_url = tabledapDefaultTest.generate_url()
+    generated_url = tabledapDefaultTest.generate_url(additionals)
 
     #Print the response
     response = ec.ERDDAPHandler.return_response(generated_url)
-    print(response["message"])
+    filepath = ec.ERDDAPHandler.responseToCsv(response, tabledapDefaultTest)
 
 
 if __name__ == '__main__':

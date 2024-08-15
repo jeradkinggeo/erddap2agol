@@ -1,5 +1,7 @@
 #ERDDAP stuff is handled here with the ERDDAPHandler class. 
 import sys, os, requests, datetime 
+import pandas as pd
+from io import StringIO
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src import glob_var as gv
@@ -7,31 +9,52 @@ from src import glob_var as gv
 
 #Currently hardcoded for tabledap and gcoos2.
 class ERDDAPHandler:
-    def __init__(self, datasetid, fileType, longitude, latitude, time, station, wmo_platform_code, start_time, end_time):
+    def __init__(self, datasetid, fileType, longitude, latitude, time,start_time, end_time):
         self.base_url = 'https://erddap2.gcoos.org/erddap/tabledap/'
         self.datasetid = datasetid
         self.fileType = fileType
         self.longitude = longitude
         self.latitude = latitude
         self.time = time
-        self.station = station
-        self.wmo_platform_code = wmo_platform_code
         self.start_time = start_time
         self.end_time = end_time
 
-    #Do not ever touch this again.
-    def generate_url(self) -> str:
+    def generate_url(self, additionalAttr: list = None) -> str:
         url = (
             f"{self.base_url}{self.datasetid}.{self.fileType}?"
-            f"{self.longitude}%2C{self.latitude}%2C"
-            f"{self.time}"
+            f"{self.longitude}%2C{self.latitude}"
+        )
+
+        if additionalAttr:
+            additional_attrs_str = "%2C".join(additionalAttr)
+            url += f"%2C{additional_attrs_str}"
+
+        url += (
+            f"%2C{self.time}"
             f"&time%3E={self.start_time}&time%3E={self.end_time}Z"
         )
+        
         print(f"Generated URL: {url}")
         return url
     
+    def responseToCsv(self, response: dict) -> str:
+        csvResponse = response["message"]
+        csvData = StringIO(csvResponse)
+        
+        df = pd.read_csv(csvData, skiprows=[1])
+        
+        directory = "/temp"
+        file_path = os.path.join(directory, f"{self.datasetid}.csv")
+        
+        os.makedirs(directory, exist_ok=True)
+        
+        df.to_csv(file_path, index=False)
+        
+        return file_path
+         
+    
+    
     #More checks can be added here. Be mindful of redundancy, the response code can also indicate valid arguments.
-
     @staticmethod
     def argCheck(fileType: str) -> bool:
         for item in gv.validFileTypes:
@@ -73,6 +96,7 @@ class ERDDAPHandler:
     @staticmethod
     def get_current_time():
         return datetime.datetime.now().isoformat()
+           
     
 # Below we can specify different configurations for the ERDDAP object. 
 
@@ -83,8 +107,6 @@ tabledapDefault = ERDDAPHandler(
     longitude = "longitude",
     latitude = "latitude",
     time = 'time',
-    station = None,
-    wmo_platform_code = None,
     start_time = None,
     end_time = None
 )

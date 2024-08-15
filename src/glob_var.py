@@ -2,8 +2,6 @@ TestParamsDict = {
     "42G01":  {
     "datasetid": "gcoos_42G01",
     "fileType": "json",
-    "station": "42G01",
-    "wmo_platform_code": "42G01",
     "start_time": "2024-05-25T00:00:00",
     "end_time": "2024-05-28T00:00:00"
     }

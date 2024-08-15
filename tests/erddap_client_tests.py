@@ -44,6 +44,7 @@ class TestERDDAPHandler(unittest.TestCase):
         self.assertEqual(tabledapDefaultTest.__dict__, expected_tabledapDefault.__dict__)
 
 
+    # UH OH: Using gcoos2 broke this test and now we know the sample URL is a lie.
     def test_generate_url(self):
         # Initialize tabledapDefault 
         tabledapDefaultTest = ec.tabledapDefault
@@ -52,8 +53,6 @@ class TestERDDAPHandler(unittest.TestCase):
         testParams = {
             "datasetid": "pmelTaoDySst",
             "fileType": "htmlTable",
-            "station": "station",
-            "wmo_platform_code": "wmo_platform_code",
             "start_time": "2015-05-23T12:00:00",
             "end_time": "2015-05-31T12:00:00"
         }
@@ -65,6 +64,31 @@ class TestERDDAPHandler(unittest.TestCase):
         
         # Expected URL based directly from documentation
         expected_url = "https://coastwatch.pfeg.noaa.gov/erddap/tabledap/pmelTaoDySst.htmlTable?longitude,latitude,time,station,wmo_platform_code,T_25&time%3E=2015-05-23T12:00:00Z&time%3C=2015-05-31T12:00:00Z"
+        
+        self.assertEqual(generated_url, expected_url)
+    
+    def test_generate_url2(self):
+        # Initialize tabledapDefault 
+        tabledapDefaultTest = ec.tabledapDefault
+        
+        # Test parameters from ERDDAP documentation
+        testParams =  {
+        "datasetid": "gcoos_42G01",
+        "fileType": "json",
+        "start_time": "2024-05-25T00:00:00",
+        "end_time": "2024-05-28T00:00:00"
+        }
+
+        #Loading a few additional attributes to test with
+        additionals = ["sea_surface_temperature_0", "sea_water_speed_0", "sea_water_direction_0", "upward_sea_water_velocity_0"]
+        
+        #Calling the previous function we tested (oops).
+        ec.ERDDAPHandler.updateObjectfromParams(tabledapDefaultTest, testParams)
+        
+        generated_url = tabledapDefaultTest.generate_url(additionals)
+        
+        # Expected URL based directly from documentation
+        expected_url = "https://erddap2.gcoos.org/erddap/tabledap/gcoos_42G01.json?time%2Clatitude%2Clongitude%2Cplatform%2Ccrs%2Cdepth%2Csea_surface_temperature_0%2Csea_water_speed_0%2Csea_water_direction_0%2Cupward_sea_water_velocity_0&time%3E=2024-07-30T00%3A00%3A00Z&time%3C=2024-08-06T14%3A36%3A00Z"
         
         self.assertEqual(generated_url, expected_url)
 
