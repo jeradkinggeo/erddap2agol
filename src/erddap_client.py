@@ -37,7 +37,8 @@ class ERDDAPHandler:
         print(f"Generated URL: {url}")
         return url
     
-    def responseToCsv(self, response: any) -> None:
+    # Converts response to dataframe then saves it to a csv file, returns the file path
+    def responseToCsv(self, response: any) -> str:
         csvResponse = response
         csvData = StringIO(csvResponse)
         
@@ -52,9 +53,9 @@ class ERDDAPHandler:
         print(file_path)
         
         df1.to_csv(file_path, index=False, header=False)
+
+        return file_path
         
-    
-    
     #More checks can be added here. Be mindful of redundancy, the response code can also indicate valid arguments.
     @staticmethod
     def argCheck(fileType: str) -> bool:
@@ -69,8 +70,7 @@ class ERDDAPHandler:
         for key, value in params.items():
             setattr(erddapObject, key, value)
 
-    # I don't like how this function looks. 
-    # We may want to parse the response code and message from the response text instead of letting the library grab it  
+    # This is not very readable. 
     @staticmethod
     def return_response(generatedUrl: str) -> dict:
         try:
