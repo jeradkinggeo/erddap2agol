@@ -20,7 +20,8 @@ def makeItemProperties(datasetid:"ec.ERDDAPHandler") -> dict:
     type = datasetid.fileType
     ItemProperties = {
         "title": dataid,
-        "type": type,
+        # Type will be useful but we need to map the ERDDAP file types to AGO file types.
+        #"type": type,
     }
     return ItemProperties
 
