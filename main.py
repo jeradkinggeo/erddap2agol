@@ -1,12 +1,9 @@
-import sys
-import os
 from arcgis.gis import GIS
 from src.utils import OverwriteFS
 from src import erddap_client as ec
 from src import ago_wrapper as aw
 import src.glob_var as gv
-import pandas as pd
-from io import StringIO
+
 
 def main():
 
@@ -16,7 +13,7 @@ def main():
     #Testing with 42G01
     testParams =  {
     "datasetid": "gcoos_42G01",
-    "fileType": "csv",
+    "fileType": "geoJson",
     "start_time": "2024-05-25T00:00:00",
     "end_time": "2024-05-28T00:00:00"
     }
@@ -41,7 +38,7 @@ def main():
 
     aw.agoConnect()
 
-    testPropertiesDict = aw.makeItemProperties(filepath, tabledapDefaultTest)
+    testPropertiesDict = aw.makeItemProperties(tabledapDefaultTest)
 
     aw.uploadCSV(testPropertiesDict, filepath)
 

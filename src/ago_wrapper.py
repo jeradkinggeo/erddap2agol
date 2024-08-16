@@ -15,11 +15,12 @@ def agoConnect() -> None:
 
 #Creating proper item properties that are parsed from ERDDAP metadata will come later.
 # This function is just a placeholder for now.  
-def makeItemProperties(filepath: any , datasetid:"ec.ERDDAPHandler") -> dict:
-    csvPath = filepath
+def makeItemProperties(datasetid:"ec.ERDDAPHandler") -> dict:
     dataid = datasetid.datasetid
+    type = datasetid.fileType
     ItemProperties = {
         "title": dataid,
+        "type": type,
     }
     return ItemProperties
 
@@ -33,3 +34,13 @@ def uploadCSV(item_prop: dict, path) -> None:
             f"Item ID: {published_item.id}")
     except Exception as e:
         print(f"An error occurred uploading the CSV: {e}")
+
+def uploadFromLink(item_prop: dict, link: str) -> None:
+    try:
+        item = gis.content.add(item_prop, link)
+        print(f"Successfully uploaded {item_prop['title']} to ArcGIS Online")
+        published_item = item.publish()
+        print(f"Item Details -> \n"
+            f"Item ID: {published_item.id}")
+    except Exception as e:
+        print(f"An error occurred from Link: {e}")
