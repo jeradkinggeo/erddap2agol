@@ -12,9 +12,6 @@ def main():
     #Get tabledap object
     tabledapDefaultTest = ec.tabledapDefault
 
-    #Get the time. This is the only dynamic parameter we have to test with right now.
-    thetime = ec.ERDDAPHandler.get_current_time()
-
     #Testing with 42G01
     testParams =  {
     "datasetid": "gcoos_42G01",
@@ -24,9 +21,7 @@ def main():
     }
 
     additionals = ["sea_surface_temperature_0", "sea_water_speed_0", "sea_water_direction_0", "upward_sea_water_velocity_0"]
-
-
-       
+      
     ec.ERDDAPHandler.argCheck(testParams["fileType"])
 
     #put in tabledap object
@@ -37,7 +32,9 @@ def main():
 
     #Print the response
     response = ec.ERDDAPHandler.return_response(generated_url)
-    filepath = ec.ERDDAPHandler.responseToCsv(response, tabledapDefaultTest)
+    print(response, type(response))
+    ec.ERDDAPHandler.responseToCsv(tabledapDefaultTest, response)
+    
 
 
 if __name__ == '__main__':

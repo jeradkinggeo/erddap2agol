@@ -37,21 +37,22 @@ class ERDDAPHandler:
         print(f"Generated URL: {url}")
         return url
     
-    def responseToCsv(self, response: dict) -> str:
-        csvResponse = response["message"]
+    def responseToCsv(self, response: any) -> None:
+        csvResponse = response
         csvData = StringIO(csvResponse)
         
-        df = pd.read_csv(csvData, skiprows=[1])
+        df = pd.read_csv(csvData, header=None, low_memory=False)
+
+        # This drops the second row containing the units
+        df1 = df.drop(1).reset_index(drop=True)
+
+        currentpath = os.getcwd()
+        directory = "/temp/"
+        file_path = f"{currentpath}{directory}{self.datasetid}.csv"
+        print(file_path)
         
-        directory = "/temp"
-        file_path = os.path.join(directory, f"{self.datasetid}.csv")
+        df1.to_csv(file_path, index=False, header=False)
         
-        os.makedirs(directory, exist_ok=True)
-        
-        df.to_csv(file_path, index=False)
-        
-        return file_path
-         
     
     
     #More checks can be added here. Be mindful of redundancy, the response code can also indicate valid arguments.
@@ -75,10 +76,7 @@ class ERDDAPHandler:
         try:
             response = requests.get(generatedUrl)
             response.raise_for_status() 
-            return {
-                "status_code": response.status_code,
-                "message": response.text  
-            }
+            return response.text
         except requests.exceptions.HTTPError as http_err:
             error_message = response.text if response is not None else str(http_err)
             print(f"HTTP error occurred: {http_err}")
