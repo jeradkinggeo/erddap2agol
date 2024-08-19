@@ -19,22 +19,43 @@ class ERDDAPHandler:
         self.start_time = start_time
         self.end_time = end_time
 
-    def generate_url(self, additionalAttr: list = None) -> str:
-        url = (
-            f"{self.base_url}{self.datasetid}.{self.fileType}?"
-            f"{self.longitude}%2C{self.latitude}"
-        )
+    # Generates URL for ERDDAP request based on class object attributes
+    def generate_url(self, isSeed: bool, additionalAttr: list = None) -> str:
+        # force isSeed to grab csv data
+        if isSeed == True:
+            url = (
+                f"{self.base_url}{self.datasetid}.csv?"
+                f"{self.longitude}%2C{self.latitude}"
+            )
 
-        if additionalAttr:
-            additional_attrs_str = "%2C".join(additionalAttr)
-            url += f"%2C{additional_attrs_str}"
+            if additionalAttr:
+                additional_attrs_str = "%2C".join(additionalAttr)
+                url += f"%2C{additional_attrs_str}"
 
-        url += (
-            f"%2C{self.time}"
-            f"&time%3E={self.start_time}&time%3E={self.end_time}Z"
-        )
-        
-        print(f"Generated URL: {url}")
+            url += (
+                f"%2C{self.time}"
+                f"&time%3E={self.start_time}&time%3C={self.end_time}Z"
+            )
+            
+            print(f"Generated URL: {url}")
+        # else it will update the data as geojson
+        else:
+            url = (
+                f"{self.base_url}{self.datasetid}.{self.fileType}?"
+                f"{self.longitude}%2C{self.latitude}"
+            )
+
+            if additionalAttr:
+                additional_attrs_str = "%2C".join(additionalAttr)
+                url += f"%2C{additional_attrs_str}"
+
+            url += (
+                f"%2C{self.time}"
+                f"&time%3E={self.start_time}&time%3C={self.end_time}Z"
+            )
+            
+            print(f"Generated URL: {url}")
+
         return url
     
     # Converts response to dataframe then saves it to a csv file, returns the file path
@@ -55,8 +76,43 @@ class ERDDAPHandler:
         df1.to_csv(file_path, index=False, header=False)
 
         return file_path
+    
+    # Creates a list of time values between start and end time
+    def iterateTime(self, incrementType: str, increment: int) -> list:
+        timeList = []
+        start = datetime.datetime.fromisoformat(self.start_time)
+        end = datetime.datetime.fromisoformat(self.end_time)
+        current = start
+        if incrementType == "days":
+            while current <= end:
+                timeList.append(current.isoformat())
+                current += datetime.timedelta(days=increment)
+        elif incrementType == "hours":
+            while current <= end:
+                timeList.append(current.isoformat())
+                current += datetime.timedelta(hours=increment)
+        return timeList
+    
+    # Creates a seed URL to download a small amount of data. There are probably better ways to just grab the first record.
+    def createSeedUrl(self, additionalAttr: list = None) -> str:
+        oldStart = self.start_time
+        oldEnd = self.end_time
+
+        #Generate time list
+        time_list = self.iterateTime("hours", 3)
+
+        #Set start and end time to first and second element of time list
+        self.start_time = time_list[0]
+        self.end_time = time_list[1]
+        generated_url = self.generate_url(True, additionalAttr)
+
+        #Set the start time to the end of the seed data
+        self.start_time = self.end_time
+        self.end_time = oldEnd
+        return generated_url
+
         
-    #More checks can be added here. Be mindful of redundancy, the response code can also indicate valid arguments.
+    #More checks can be added here.
     @staticmethod
     def argCheck(fileType: str) -> bool:
         for item in gv.validFileTypes:

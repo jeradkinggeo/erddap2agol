@@ -13,7 +13,7 @@ def main():
     #Testing with 42G01
     testParams =  {
     "datasetid": "gcoos_42G01",
-    "fileType": "geoJson",
+    "fileType": "csv",
     "start_time": "2024-05-25T00:00:00",
     "end_time": "2024-05-28T00:00:00"
     }
@@ -28,7 +28,7 @@ def main():
     ec.ERDDAPHandler.updateObjectfromParams(tabledapDefaultTest, testParams)
 
     #Generate the URL
-    generated_url = tabledapDefaultTest.generate_url(additionals)
+    generated_url = tabledapDefaultTest.generate_url(False, additionals)
 
     # Evaluate response and save to CSV
     response = ec.ERDDAPHandler.return_response(generated_url)
@@ -40,7 +40,7 @@ def main():
 
     testPropertiesDict = aw.makeItemProperties(tabledapDefaultTest)
 
-    aw.uploadCSV(testPropertiesDict, filepath)
+    aw.publishItem(testPropertiesDict, filepath)
 
 
 

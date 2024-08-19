@@ -26,13 +26,14 @@ def makeItemProperties(datasetid:"ec.ERDDAPHandler") -> dict:
     return ItemProperties
 
 #We will eventually want different filetypes to be uploaded.
-def uploadCSV(item_prop: dict, path) -> None:
+def publishItem(item_prop: dict, path):
     try:
         csv_item = gis.content.add(item_prop, path)
         published_item = csv_item.publish()
         print(f"Successfully uploaded {item_prop['title']} to ArcGIS Online")
         print(f"Item Details -> \n"
             f"Item ID: {published_item.id}")
+        return published_item.id
     except Exception as e:
         print(f"An error occurred uploading the CSV: {e}")
 
