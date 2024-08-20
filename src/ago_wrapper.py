@@ -22,7 +22,7 @@ def makeItemProperties(datasetid:"ec.ERDDAPHandler") -> dict:
         "title": dataid,
         "type": "CSV",
         "item_type": "Feature Service",
-        "tags": ["TestTag"]
+        "tags": ["ERDDAP2AGO"]
     }
     return ItemProperties
 
