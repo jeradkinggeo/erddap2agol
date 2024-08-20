@@ -8,8 +8,8 @@ import time
 def main():
     gis = GIS("home")
 
-    # Get an instance of ERDDAPHandler object
-    # tabledapDefaultTest = ec.erddap2
+    #Get an instance of ERDDAPHandler object
+    tabledapDefaultTest = ec.erddap2
     tabledapDefaultTest = ec.coastwatch
 
     #Testing with 42G01
@@ -47,18 +47,20 @@ def main():
 
     aw.agoConnect()
 
+    #Make item prop dict
     print("Making Item Properties")
     testPropertiesDict = aw.makeItemProperties(tabledapDefaultTest)
 
+    publish_params = {"locationType": "coordinates",
+        "latitudeFieldName": "latitude (degrees_north)",
+        "longitudeFieldName": "longitude (degrees_east)"}
+    
     print("Publishing Item")
-    item_id = aw.publishItem(testPropertiesDict, filepath)
+    table_id = aw.publishTable(testPropertiesDict, publish_params, filepath)
+    itemcontent = gis.content.get(table_id)
 
     print("Publishing done, sleeping for 20 seconds to AGO processing")
     time.sleep(20)
-
-
-    print("Getting content from item id")
-    itemcontent = gis.content.get(item_id)
 
 
 
