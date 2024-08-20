@@ -9,7 +9,7 @@ from src import glob_var as gv
 
 #Currently hardcoded for tabledap and gcoos2.
 class ERDDAPHandler:
-    def __init__(self, server, datasetid, fileType, longitude, latitude, time,start_time, end_time):
+    def __init__(self, server, datasetid, fileType, longitude, latitude, time, start_time, end_time, publishParams):
         self.server = server
         self.datasetid = datasetid
         self.fileType = fileType
@@ -18,6 +18,7 @@ class ERDDAPHandler:
         self.time = time
         self.start_time = start_time
         self.end_time = end_time
+        self.publishParams = publishParams
 
     # Generates URL for ERDDAP request based on class object attributes
     def generate_url(self, isSeed: bool, additionalAttr: list = None) -> str:
@@ -176,7 +177,10 @@ erddap2 = ERDDAPHandler(
     latitude = "latitude",
     time = 'time',
     start_time = None,
-    end_time = None
+    end_time = None,
+    publishParams = {"locationType": "coordinates",
+        "latitudeFieldName": "latitude (degrees_north)",
+        "longitudeFieldName": "longitude (degrees_east)"}
 )
 
 coastwatch = ERDDAPHandler(
@@ -187,4 +191,8 @@ coastwatch = ERDDAPHandler(
     latitude = "latitude",
     time = 'time',
     start_time = None,
-    end_time= None)
+    end_time= None,
+    publishParams = {"locationType": "coordinates",
+        "latitudeFieldName": "latitude (degrees_north)",
+        "longitudeFieldName": "longitude (degrees_east)"}
+    )
