@@ -9,8 +9,8 @@ from src import glob_var as gv
 
 #Currently hardcoded for tabledap and gcoos2.
 class ERDDAPHandler:
-    def __init__(self, datasetid, fileType, longitude, latitude, time,start_time, end_time):
-        self.base_url = 'https://erddap2.gcoos.org/erddap/tabledap/'
+    def __init__(self, server, datasetid, fileType, longitude, latitude, time,start_time, end_time):
+        self.server = server
         self.datasetid = datasetid
         self.fileType = fileType
         self.longitude = longitude
@@ -21,10 +21,10 @@ class ERDDAPHandler:
 
     # Generates URL for ERDDAP request based on class object attributes
     def generate_url(self, isSeed: bool, additionalAttr: list = None) -> str:
-        # force isSeed to grab csv data
+        # force isSeed to grab csvp data
         if isSeed == True:
             url = (
-                f"{self.base_url}{self.datasetid}.csv?"
+                f"{self.server}{self.datasetid}.csvp?"
                 f"{self.longitude}%2C{self.latitude}"
             )
 
@@ -34,14 +34,15 @@ class ERDDAPHandler:
 
             url += (
                 f"%2C{self.time}"
-                f"&time%3E={self.start_time}&time%3C={self.end_time}Z"
+                f"&time%3E={self.start_time}&time%3C={self.end_time}Z&orderBy(%22time%22)"
             )
             
-            print(f"Generated URL: {url}")
-        # else it will update the data as geojson
+            print(f"Seed URL: {url}",
+                  f"Start Time: {self.start_time}",
+                  f"End Time: {self.end_time}")
         else:
             url = (
-                f"{self.base_url}{self.datasetid}.{self.fileType}?"
+                f"{self.server}{self.datasetid}.{self.fileType}?"
                 f"{self.longitude}%2C{self.latitude}"
             )
 
@@ -51,7 +52,7 @@ class ERDDAPHandler:
 
             url += (
                 f"%2C{self.time}"
-                f"&time%3E={self.start_time}&time%3C={self.end_time}Z"
+                f"&time%3E={self.start_time}&time%3C={self.end_time}Z&orderBy(%22time%22)"
             )
             
             print(f"Generated URL: {url}")
@@ -64,16 +65,28 @@ class ERDDAPHandler:
         csvData = StringIO(csvResponse)
         
         df = pd.read_csv(csvData, header=None, low_memory=False)
-
-        # This drops the second row containing the units
-        df1 = df.drop(1).reset_index(drop=True)
-
+        
         currentpath = os.getcwd()
         directory = "/temp/"
         file_path = f"{currentpath}{directory}{self.datasetid}.csv"
         print(file_path)
         
-        df1.to_csv(file_path, index=False, header=False)
+        df.to_csv(file_path, index=False, header=False)
+
+        return file_path
+    
+    def responseToJson(self, response: any) -> str:
+        jsonResponse = response
+        jsonData = StringIO(jsonResponse)
+        
+        df = pd.read_json(jsonData, orient='records')
+
+        currentpath = os.getcwd()
+        directory = "/temp/"
+        file_path = f"{currentpath}{directory}{self.datasetid}.json"
+        print(file_path)
+        
+        df.to_json(file_path, orient='records')
 
         return file_path
     
@@ -155,7 +168,8 @@ class ERDDAPHandler:
 # Below we can specify different configurations for the ERDDAP object. 
 
 # Since lat/lon and time are essentially default parameters, we can set them here.
-tabledapDefault = ERDDAPHandler(
+erddap2 = ERDDAPHandler(
+    server='https://erddap2.gcoos.org/erddap/tabledap/',
     datasetid = None,
     fileType = None,
     longitude = "longitude",
@@ -164,3 +178,13 @@ tabledapDefault = ERDDAPHandler(
     start_time = None,
     end_time = None
 )
+
+coastwatch = ERDDAPHandler(
+    server='https://coastwatch.pfeg.noaa.gov/erddap/tabledap/',
+    datasetid = None,
+    fileType = None,
+    longitude = "longitude",
+    latitude = "latitude",
+    time = 'time',
+    start_time = None,
+    end_time= None)
