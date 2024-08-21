@@ -39,7 +39,7 @@ def publishTable(item_prop: dict, publish_params: dict, path):
 
 def searchContentByTag(tag: str) -> list:
     try:
-        search_query = f'tags:"{tag}" AND owner:{gis.users.me.username}'
+        search_query = f'tags:"{tag}" AND owner:{gis.users.me.username} AND type:Feature Service'
         search_results = gis.content.search(query=search_query, max_items=100)
 
         # Check if any items were found
@@ -58,7 +58,6 @@ def searchContentByTag(tag: str) -> list:
     
     except Exception as e:
         print(f"An error occurred while searching for items: {e}")
-        return []
 
 #The below functions have no utility right now
 #-----------------------------------------------------------
@@ -92,5 +91,7 @@ def createFeatureService(item_prop: dict) -> str:
             print(f"An error occurred creating the Feature Service: {e}")
     else:
         print(f"Feature Service {item_prop_mod['title']} already exists, use OverwriteFS to Update")
+
+
 
 

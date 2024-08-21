@@ -1,8 +1,13 @@
 from src import erddap_client as ec
 from src import ago_wrapper as aw
 from tests import test_params as tp
+from logs import updatelog as ul
 from arcgis.gis import GIS
 from src.utils import OverwriteFS
+
+
+#-----------------ERDDAP2AGOL CUI-----------------
+
 
 def cui():
     while True:
@@ -40,7 +45,7 @@ def create_erddap_item_menu():
         gis = aw.agoConnect()
         testParams = tp.gcoos_42G01_dict["testParams"]
         additionals = tp.gcoos_42G01_dict["additionals"]
-        tabledapDefaultTest = ec.erddap2
+        tabledapDefaultTest = ec.erddapGcoos
     elif user_choice == "3":
         cui()
     
@@ -48,10 +53,10 @@ def create_erddap_item_menu():
 
     # Generate the seed_url
     seed_url = tabledapDefaultTest.createSeedUrl(additionals)
+    full_url = tabledapDefaultTest.generate_url(False, additionals)
 
     # Evaluate response and save to CSV
     response = ec.ERDDAPHandler.return_response(seed_url)
-
     filepath = ec.ERDDAPHandler.responseToCsv(tabledapDefaultTest, response)
 
     #------ERDDAP side is done, now we move to AGO side------
@@ -59,7 +64,6 @@ def create_erddap_item_menu():
     # Connect to ArcGIS Online
     aw.agoConnect()
 
-    # Make item properties dictionary
     print("Making Item Properties")
     testPropertiesDict = aw.makeItemProperties(tabledapDefaultTest)
 
@@ -70,8 +74,10 @@ def create_erddap_item_menu():
     print("Publishing Item")
     table_id = aw.publishTable(testPropertiesDict, publish_params, filepath)
     itemcontent = gis.content.get(table_id)
-
     print(f"Item published successfully with ID: {table_id}")
+
+    ul.updateLog(tabledapDefaultTest.datasetid, table_id, seed_url, full_url, ec.ERDDAPHandler.get_current_time())
+
 
 
 def update_from_erddap_menu():
@@ -79,7 +85,33 @@ def update_from_erddap_menu():
     print("Searching your content for ERDDAP items...")
     gis = aw.agoConnect()
     items = aw.searchContentByTag("ERDDAP2AGO")
-    #left off here
+    
+
+    print(f"Item structure: {type(items[0])}")
+    print(f"Item content: {items[0]}")
+    
+    print("\nWould you like to proceed with updating these items?")
+    ip = input("y/n: ")
+    if ip.lower() == "y":
+        print("\nWhich item would you like to update? (number in list)")
+        for i, item in enumerate(items, start=1):
+            print(f"{i}: {item}")  
+
+        ip2 = int(input(": ")) - 1  
+        selected_item = items[ip2]
+
+        
+        url = ul.getUrlFromID(selected_item)
+
+        if url:
+            print(f"URL: {url}")
+            content = gis.content.get(selected_item)
+            OverwriteFS.overwriteFeatureService(content, url, ignoreAge=True)
+        else:
+            print(f"No URL found for item ID {selected_item}.")
+    else:
+        print("Update canceled.")
+        cui()
 
 def exit_program():
     print("\nExiting program...")

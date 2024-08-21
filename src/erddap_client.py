@@ -23,7 +23,7 @@ class ERDDAPHandler:
     # Generates URL for ERDDAP request based on class object attributes
     def generate_url(self, isSeed: bool, additionalAttr: list = None) -> str:
         # force isSeed to grab csvp data
-        if isSeed == True:
+        if isSeed:
             url = (
                 f"{self.server}{self.datasetid}.csvp?"
                 f"{self.longitude}%2C{self.latitude}"
@@ -35,12 +35,12 @@ class ERDDAPHandler:
 
             url += (
                 f"%2C{self.time}"
-                f"&time%3E={self.start_time}&time%3C={self.end_time}Z&orderBy(%22time%22)"
+                f"&time%3E%3D{self.start_time}Z&time%3C%3D{self.end_time}Z&orderBy(%22time%22)"
             )
             
             print(f"Seed URL: {url}",
-                  f"Start Time: {self.start_time}",
-                  f"End Time: {self.end_time}")
+                f"Start Time: {self.start_time}",
+                f"End Time: {self.end_time}")
         else:
             url = (
                 f"{self.server}{self.datasetid}.{self.fileType}?"
@@ -53,7 +53,7 @@ class ERDDAPHandler:
 
             url += (
                 f"%2C{self.time}"
-                f"&time%3E={self.start_time}&time%3C={self.end_time}Z&orderBy(%22time%22)"
+                f"&time%3E%3D{self.start_time}Z&time%3C%3D{self.end_time}Z&orderBy(%22time%22)"
             )
             
             print(f"Generated URL: {url}")
@@ -169,8 +169,8 @@ class ERDDAPHandler:
 # Below we can specify different configurations for the ERDDAP object. 
 
 # Since lat/lon and time are essentially default parameters, we can set them here.
-erddap2 = ERDDAPHandler(
-    server='https://erddap2.gcoos.org/erddap/tabledap/',
+erddapGcoos = ERDDAPHandler(
+    server='https://erddap.gcoos.org/erddap/tabledap/',
     datasetid = None,
     fileType = None,
     longitude = "longitude",
