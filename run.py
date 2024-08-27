@@ -13,16 +13,19 @@ def cui():
     while True:
         print("\nWelcome to ERDDAP2AGO!")
         print("1. Create ERDDAP Item")
-        print("2. Update from ERDDAP")
-        print("3. Exit")
+        print("2. Populate Seed File")
+        print("3. Update from ERDDAP")
+        print("4. Exit")
         
         user_choice = input(": ")
 
         if user_choice == "1":
             create_erddap_item_menu()
         elif user_choice == "2":
-            update_from_erddap_menu()
+            populate_seed_menu()
         elif user_choice == "3":
+            update_from_erddap_menu()
+        elif user_choice == "4":
             exit_program()
         else:
             print("Oops.")
@@ -68,7 +71,7 @@ def create_erddap_item_menu():
     testPropertiesDict = aw.makeItemProperties(tabledapDefaultTest)
 
     # Get publish parameters from the class object
-    publish_params = tabledapDefaultTest.publishParams
+    publish_params = tabledapDefaultTest.geoParams
 
     # Publish the table to ArcGIS Online
     print("Publishing Item")
@@ -76,11 +79,10 @@ def create_erddap_item_menu():
     itemcontent = gis.content.get(table_id)
     print(f"Item published successfully with ID: {table_id}")
 
-    ul.updateLog(tabledapDefaultTest.datasetid, table_id, seed_url, full_url, ec.ERDDAPHandler.get_current_time())
+    ul.updateLog(tabledapDefaultTest.datasetid, table_id, seed_url, full_url, tabledapDefaultTest.end_time, ul.get_current_time())
 
 
-
-def update_from_erddap_menu():
+def populate_seed_menu():
     print("\nUpdate from ERDDAP")
     print("Searching your content for ERDDAP items...")
     gis = aw.agoConnect()
@@ -106,6 +108,42 @@ def update_from_erddap_menu():
         if url:
             print(f"URL: {url}")
             content = gis.content.get(selected_item)
+            OverwriteFS.overwriteFeatureService(content, url, ignoreAge=True)
+        else:
+            print(f"No URL found for item ID {selected_item}.")
+    else:
+        print("Update canceled.")
+        cui()
+
+def update_from_erddap_menu():
+    print("\nUpdate from ERDDAP")
+    print("Searching your content for ERDDAP items...")
+    gis = aw.agoConnect()
+    items = aw.searchContentByTag("ERDDAP2AGO")
+    
+
+    print(f"Item structure: {type(items[0])}")
+    print(f"Item content: {items[0]}")
+    
+    print("\nWould you like to proceed with updating these items?")
+    ip = input("y/n: ")
+    if ip.lower() == "y":
+        print("\nWhich item would you like to update? (number in list)")
+        for i, item in enumerate(items, start=1):
+            print(f"{i}: {item}")  
+
+        ip2 = int(input(": ")) - 1  
+        selected_item = items[ip2]
+
+        #lets build the url here
+        updateParams = ul.updateCallFromID(selected_item)
+
+        url = ec.ERDDAPHandler.generateUpdateUrl(updateParams[0], updateParams[1], ul.get_current_time())
+
+        if url:
+            print(f"\nURL: {url}")
+            content = gis.content.get(selected_item)
+
             OverwriteFS.overwriteFeatureService(content, url, ignoreAge=True)
         else:
             print(f"No URL found for item ID {selected_item}.")

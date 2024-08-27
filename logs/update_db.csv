@@ -1,2 +1,1 @@
-ERDDAP_ID, AGOL_ID, seed_url, full_url, last_update
-gcoos_42G01,eda4e6e438224184a6a228d90c2c10e8,https://erddap.gcoos.org/erddap/tabledap/gcoos_42G01.csvp?longitude%2Clatitude%2Csea_surface_temperature_0%2Csea_water_speed_0%2Csea_water_direction_0%2Cupward_sea_water_velocity_0%2Ctime&time%3E%3D2024-05-25T00:00:00Z&time%3C%3D2024-05-25T03:00:00Z&orderBy(%22time%22),https://erddap.gcoos.org/erddap/tabledap/gcoos_42G01.csvp?longitude%2Clatitude%2Csea_surface_temperature_0%2Csea_water_speed_0%2Csea_water_direction_0%2Cupward_sea_water_velocity_0%2Ctime&time%3E%3D2024-05-25T03:00:00Z&time%3C%3D2024-06-28T00:00:00Z&orderBy(%22time%22),2024-08-21T14:41:58.065807
+ERDDAP_ID, AGOL_ID, seed_url, full_url, lastest_data, last_update

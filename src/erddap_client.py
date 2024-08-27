@@ -1,6 +1,7 @@
 #ERDDAP stuff is handled here with the ERDDAPHandler class. 
 import sys, os, requests, datetime 
 import pandas as pd
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 from io import StringIO
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -69,6 +70,8 @@ class ERDDAPHandler:
 
         return url
     
+
+    
     # Converts response to dataframe then saves it to a csv file, returns the file path
     def responseToCsv(self, response: any) -> str:
         csvResponse = response
@@ -133,6 +136,39 @@ class ERDDAPHandler:
         self.start_time = self.end_time
         self.end_time = oldEnd
         return generated_url
+    
+    #Last update is read from database, currentTime is from current time function
+    @staticmethod
+    def generateUpdateUrl(full_url: str, last_update: str, currentTime: str) -> str:
+        # Split the URL into the base part and the query string part
+        if '?' in full_url:
+            base_url, query_string = full_url.split('?', 1)
+        else:
+            base_url = full_url
+            query_string = ""
+        
+        # Split the query string into individual components
+        params = query_string.split('&')
+        
+        # Create a list to hold the updated parameters
+        updated_params = []
+        
+        for param in params:
+            if param.startswith('time%3E%3D'):
+                updated_params.append(f"time%3E%3D{last_update}Z")
+            elif param.startswith('time%3C%3D'):
+                updated_params.append(f"time%3C%3D{currentTime}Z")
+            else:
+                updated_params.append(param)
+        
+        
+        # Join the updated parameters back into a query string
+        updated_query_string = '&'.join(updated_params)
+        
+        # Reconstruct the full URL
+        updated_url = f"{base_url}?{updated_query_string}"
+        
+        return updated_url
 
         
     #More checks can be added here.
@@ -171,8 +207,8 @@ class ERDDAPHandler:
             }
 
     @staticmethod
-    def get_current_time():
-        return datetime.datetime.now().isoformat()
+    def get_current_time() -> str:
+        return str(datetime.datetime.now().isoformat())
            
     
 # Below we can specify different configurations for the ERDDAP object. 
