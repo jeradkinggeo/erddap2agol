@@ -147,12 +147,12 @@ class ERDDAPHandler:
             base_url = full_url
             query_string = ""
         
-        # Split the query string into individual components
+        # Split along encoding
         params = query_string.split('&')
         
-        # Create a list to hold the updated parameters
         updated_params = []
         
+        #Note: time params are hardcoded here. 
         for param in params:
             if param.startswith('time%3E%3D'):
                 updated_params.append(f"time%3E%3D{last_update}Z")
@@ -165,7 +165,6 @@ class ERDDAPHandler:
         # Join the updated parameters back into a query string
         updated_query_string = '&'.join(updated_params)
         
-        # Reconstruct the full URL
         updated_url = f"{base_url}?{updated_query_string}"
         
         return updated_url

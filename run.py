@@ -1,7 +1,7 @@
-from src import erddap_client as ec
-from src import ago_wrapper as aw
-from tests import test_params as tp
-from logs import updatelog as ul
+import src.erddap_client as ec
+import src.ago_wrapper as aw
+import tests.test_params as tp
+import logs.updatelog as ul
 from arcgis.gis import GIS
 from src.utils import OverwriteFS
 
