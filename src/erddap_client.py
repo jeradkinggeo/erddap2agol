@@ -1,5 +1,5 @@
-#ERDDAP stuff is handled here with the ERDDAPHandler class. 
-import sys, os, requests, datetime 
+#ERDDAP stuff is handled here with the ERDDAPHandler class.
+import sys, os, requests, datetime
 import pandas as pd
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 from io import StringIO
@@ -25,7 +25,7 @@ class ERDDAPHandler:
         url = f"{self.server}{datasetid}.das"
         response = requests.get(url)
         return response.text
-    
+
     def parseErddapDas(das_string):
         print("Hmm")
 
@@ -47,7 +47,7 @@ class ERDDAPHandler:
                 f"%2C{self.time}"
                 f"&time%3E%3D{self.start_time}Z&time%3C%3D{self.end_time}Z&orderBy(%22time%22)"
             )
-            
+
             print(f"Seed URL: {url}",
                 f"Start Time: {self.start_time}",
                 f"End Time: {self.end_time}")
@@ -65,44 +65,44 @@ class ERDDAPHandler:
                 f"%2C{self.time}"
                 f"&time%3E%3D{self.start_time}Z&time%3C%3D{self.end_time}Z&orderBy(%22time%22)"
             )
-            
+
             print(f"Generated URL: {url}")
 
         return url
-    
 
-    
+
+
     # Converts response to dataframe then saves it to a csv file, returns the file path
     def responseToCsv(self, response: any) -> str:
         csvResponse = response
         csvData = StringIO(csvResponse)
-        
+
         df = pd.read_csv(csvData, header=None, low_memory=False)
-        
+
         currentpath = os.getcwd()
         directory = "/temp/"
         file_path = f"{currentpath}{directory}{self.datasetid}.csv"
         print(file_path)
-        
+
         df.to_csv(file_path, index=False, header=False)
 
         return file_path
-    
+
     def responseToJson(self, response: any) -> str:
         jsonResponse = response
         jsonData = StringIO(jsonResponse)
-        
+
         df = pd.read_json(jsonData, orient='records')
 
         currentpath = os.getcwd()
         directory = "/temp/"
         file_path = f"{currentpath}{directory}{self.datasetid}.json"
         print(file_path)
-        
+
         df.to_json(file_path, orient='records')
 
         return file_path
-    
+
     # Creates a list of time values between start and end time
     def iterateTime(self, incrementType: str, increment: int) -> list:
         timeList = []
@@ -118,7 +118,7 @@ class ERDDAPHandler:
                 timeList.append(current.isoformat())
                 current += datetime.timedelta(hours=increment)
         return timeList
-    
+
     # Creates a seed URL to download a small amount of data. There are probably better ways to just grab the first record.
     def createSeedUrl(self, additionalAttr: list = None) -> str:
         oldStart = self.start_time
@@ -136,7 +136,7 @@ class ERDDAPHandler:
         self.start_time = self.end_time
         self.end_time = oldEnd
         return generated_url
-    
+
     #Last update is read from database, currentTime is from current time function
     @staticmethod
     def generateUpdateUrl(full_url: str, last_update: str, currentTime: str) -> str:
@@ -146,13 +146,13 @@ class ERDDAPHandler:
         else:
             base_url = full_url
             query_string = ""
-        
+
         # Split along encoding
         params = query_string.split('&')
-        
+
         updated_params = []
-        
-        #Note: time params are hardcoded here. 
+
+        #Note: time params are hardcoded here.
         for param in params:
             if param.startswith('time%3E%3D'):
                 updated_params.append(f"time%3E%3D{last_update}Z")
@@ -160,16 +160,16 @@ class ERDDAPHandler:
                 updated_params.append(f"time%3C%3D{currentTime}Z")
             else:
                 updated_params.append(param)
-        
-        
+
+
         # Join the updated parameters back into a query string
         updated_query_string = '&'.join(updated_params)
-        
+
         updated_url = f"{base_url}?{updated_query_string}"
-        
+
         return updated_url
 
-        
+
     #More checks can be added here.
     @staticmethod
     def argCheck(fileType: str) -> bool:
@@ -178,18 +178,18 @@ class ERDDAPHandler:
                 return True
         return False
 
-    
+
     @staticmethod
     def updateObjectfromParams(erddapObject: "ERDDAPHandler", params: dict) -> None:
         for key, value in params.items():
             setattr(erddapObject, key, value)
 
-    # This is not very readable. 
+    # This is not very readable.
     @staticmethod
     def return_response(generatedUrl: str) -> dict:
         try:
             response = requests.get(generatedUrl)
-            response.raise_for_status() 
+            response.raise_for_status()
             return response.text
         except requests.exceptions.HTTPError as http_err:
             error_message = response.text if response is not None else str(http_err)
@@ -208,9 +208,9 @@ class ERDDAPHandler:
     @staticmethod
     def get_current_time() -> str:
         return str(datetime.datetime.now().isoformat())
-           
-    
-# Below we can specify different configurations for the ERDDAP object. 
+
+
+# Below we can specify different configurations for the ERDDAP object.
 
 # Since lat/lon and time are essentially default parameters, we can set them here.
 erddapGcoos = ERDDAPHandler(
