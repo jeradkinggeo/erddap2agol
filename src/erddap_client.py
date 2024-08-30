@@ -69,6 +69,45 @@ class ERDDAPHandler:
             print(f"Generated URL: {url}")
 
         return url
+    
+    def fetchData(self, url):
+        response = self.return_response(url)
+        if isinstance(response, dict) and "status_code" in response:
+            return pd.DataFrame()  
+        return pd.read_csv(StringIO(response))
+
+    def filterAttributesWithData(self, data, attributes):
+        valid_attributes = []
+        for attr in attributes:
+            if attr in data.columns and data[attr].notna().any():
+                valid_attributes.append(attr)
+        return valid_attributes
+    
+    def attributeRequest(self, attributes: list) -> list:
+        oldStart = self.start_time
+        oldEnd = self.end_time
+
+        # Generate time list for the first week
+        time_list = self.iterateTime("days", 7)
+
+        # Set start and end time to first week
+        self.start_time = time_list[0]
+        self.end_time = time_list[-1]
+        
+        # Generate URL using the given attributes
+        generated_url = self.generate_url(isSeed=True, additionalAttr=attributes)
+
+        # Fetch the data for the generated URL
+        data = self.fetchData(generated_url)
+
+        # Filter attributes that have at least one value
+        valid_attributes = self.filterAttributesWithData(data, attributes)
+
+        # Restore original start and end times
+        self.start_time = oldStart
+        self.end_time = oldEnd
+
+        return valid_attributes
 
 
 

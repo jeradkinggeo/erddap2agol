@@ -52,3 +52,35 @@ def saveToJson(data, datasetid):
     filepath = f"./das_conf/{datasetid}.json"
     with open(filepath, 'w') as json_file:
         json.dump(data, json_file, indent=4)
+
+def openJson(datasetid):
+    filepath = f"./das_conf/{datasetid}.json"
+    with open(filepath, 'r') as json_file:
+        data = json.load(json_file)
+    return data
+
+def getTimeFromJson(datasetid):
+    filepath = f"./das_conf/{datasetid}.json"
+    with open(filepath, 'r') as json_file:
+        data = json.load(json_file)
+    
+    time_str = data['time']['actual_range']['value']
+    start_time_str, end_time_str = time_str.split(', ')
+    start_time = int(float(start_time_str))
+    end_time = int(float(end_time_str))
+    
+    return start_time, end_time
+    
+def convertFromUnix(time):
+    start = datetime.datetime.fromtimestamp(time[0]).strftime('%Y-%m-%d %H:%M:%S') 
+    end = datetime.datetime.fromtimestamp(time[1]).strftime('%Y-%m-%d %H:%M:%S')
+    return start, end
+
+def getActualAttributes(data):
+    attributes_set = set() 
+    for key, value in data.items():
+        if isinstance(value, dict) and "actual_range" in value:
+            attributes_set.add(key)
+
+    return list(attributes_set)
+
