@@ -19,8 +19,8 @@ def main():
     das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
     print(das_resp)
     parsed_response = dc.parseDasResponse(das_resp)
-    parsed_response = dc.convertToDict(parsed_response)
-    dc.saveToYaml(parsed_response, datasetid)
+    parsed_response = dc.convert_to_dict(parsed_response)
+    dc.saveToJson(parsed_response, datasetid)
 
     das_dict = ec.ERDDAPHandler.parseErddapDas(das_resp)
     print("-------------------")
