@@ -79,8 +79,11 @@ def convertFromUnix(time):
 def getActualAttributes(data):
     attributes_set = set() 
     for key, value in data.items():
-        if isinstance(value, dict) and "actual_range" in value:
-            attributes_set.add(key)
+        if isinstance(value, dict):
+            if "actual_range" in value and "_qc_" not in key and key not in {"latitude", "longitude", "time"}:
+                if "coverage_content_type" in value and value["coverage_content_type"].get("value") == "qualityInformation":
+                    continue
+                attributes_set.add(key)
 
     return list(attributes_set)
 

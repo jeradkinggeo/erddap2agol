@@ -26,9 +26,6 @@ class ERDDAPHandler:
         response = requests.get(url)
         return response.text
 
-    def parseErddapDas(das_string):
-        print("Hmm")
-
 
     # Generates URL for ERDDAP request based on class object attributes
     def generate_url(self, isSeed: bool, additionalAttr: list = None) -> str:
@@ -53,7 +50,7 @@ class ERDDAPHandler:
                 f"End Time: {self.end_time}")
         else:
             url = (
-                f"{self.server}{self.datasetid}.{self.fileType}?"
+                f"{self.server}{self.datasetid}.csvp?"
                 f"{self.longitude}%2C{self.latitude}"
             )
 
@@ -83,27 +80,23 @@ class ERDDAPHandler:
                 valid_attributes.append(attr)
         return valid_attributes
     
+
+    #Might be unnecessary
     def attributeRequest(self, attributes: list) -> list:
         oldStart = self.start_time
         oldEnd = self.end_time
 
-        # Generate time list for the first week
         time_list = self.iterateTime("days", 7)
 
-        # Set start and end time to first week
         self.start_time = time_list[0]
         self.end_time = time_list[-1]
         
-        # Generate URL using the given attributes
         generated_url = self.generate_url(isSeed=True, additionalAttr=attributes)
 
-        # Fetch the data for the generated URL
         data = self.fetchData(generated_url)
 
-        # Filter attributes that have at least one value
         valid_attributes = self.filterAttributesWithData(data, attributes)
 
-        # Restore original start and end times
         self.start_time = oldStart
         self.end_time = oldEnd
 
@@ -163,15 +156,12 @@ class ERDDAPHandler:
         oldStart = self.start_time
         oldEnd = self.end_time
 
-        #Generate time list
         time_list = self.iterateTime("hours", 3)
 
-        #Set start and end time to first and second element of time list
         self.start_time = time_list[0]
         self.end_time = time_list[1]
         generated_url = self.generate_url(True, additionalAttr)
 
-        #Set the start time to the end of the seed data
         self.start_time = self.end_time
         self.end_time = oldEnd
         return generated_url
@@ -179,7 +169,6 @@ class ERDDAPHandler:
     #Last update is read from database, currentTime is from current time function
     @staticmethod
     def generateUpdateUrl(full_url: str, last_update: str, currentTime: str) -> str:
-        # Split the URL into the base part and the query string part
         if '?' in full_url:
             base_url, query_string = full_url.split('?', 1)
         else:
@@ -207,16 +196,6 @@ class ERDDAPHandler:
         updated_url = f"{base_url}?{updated_query_string}"
 
         return updated_url
-
-
-    #More checks can be added here.
-    @staticmethod
-    def argCheck(fileType: str) -> bool:
-        for item in gv.validFileTypes:
-            if fileType == item:
-                return True
-        return False
-
 
     @staticmethod
     def updateObjectfromParams(erddapObject: "ERDDAPHandler", params: dict) -> None:
@@ -252,6 +231,8 @@ class ERDDAPHandler:
 # Below we can specify different configurations for the ERDDAP object.
 
 # Since lat/lon and time are essentially default parameters, we can set them here.
+# No. change that.
+
 erddapGcoos = ERDDAPHandler(
     server='https://erddap.gcoos.org/erddap/tabledap/',
     datasetid = None,

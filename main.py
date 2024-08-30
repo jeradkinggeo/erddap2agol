@@ -2,65 +2,66 @@ from arcgis.gis import GIS
 from src.utils import OverwriteFS
 from src import erddap_client as ec
 from src import ago_wrapper as aw
-from tests import test_params as tp
+from src import das_client as dc
+import logs.updatelog as ul
 import src.glob_var as gv
 import time
+
+# note- needs to check if returned json is empty
+
 
 def main():
     gis = GIS("home")
 
-    #Get an instance of ERDDAPHandler object and load test parameters
-    #tabledapDefaultTest = ec.erddap2
-    tabledapDefaultTest = ec.coastwatch
+    #first we get dataset id
+    datasetid = input("Enter datasetid: ")
 
-    testParams = tp.fsuNoaaShipWTEOnrt_dict["testParams"]
-    additionals = tp.fsuNoaaShipWTEOnrt_dict["additionals"]
+    #here we would check which server the dataset belongs 
+    gcload = ec.erddapGcoos
 
-    #put in tabledap object
-    ec.ERDDAPHandler.updateObjectfromParams(tabledapDefaultTest, testParams)
+    das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
+    parsed_response = dc.parseDasResponse(das_resp)
+    parsed_response = dc.convertToDict(parsed_response)
+    dc.saveToJson(parsed_response, datasetid)
 
-    #Generate the URL
-    seed_url = tabledapDefaultTest.createSeedUrl(additionals)
-    generated_url = tabledapDefaultTest.generate_url(False, additionals)
+    #now we have the das info downloaded and parsed into json
+    #lets find what attributes are available
+    
+    attribute_list = dc.getActualAttributes(dc.openJson(datasetid))
 
-    # Evaluate response and save to CSV
-    response = ec.ERDDAPHandler.return_response(seed_url)
-    print(response)
-    filepath = ec.ERDDAPHandler.responseToCsv(tabledapDefaultTest, response)
+    #lets set time attr from the json
 
-    #------ERDDAP side is done, now we move to AGO side------ 
+    unixtime = (dc.getTimeFromJson(datasetid))
+    start, end = dc.convertFromUnix(unixtime)
+
+    setattr(gcload, "start_time", start)
+    setattr(gcload, "end_time", end)
+    setattr(gcload, "datasetid", datasetid)
+
+    # Generate the seed_url
+    full_url = gcload.generate_url(False, attribute_list)
+
+    print(f"\nFull URL: {full_url}")
+
+    response = ec.ERDDAPHandler.return_response(full_url)
+    filepath = ec.ERDDAPHandler.responseToCsv(gcload, response)
 
     aw.agoConnect()
 
-    #Make item prop dict
-    print("Making Item Properties")
-    testPropertiesDict = aw.makeItemProperties(tabledapDefaultTest)
+    propertyDict = aw.makeItemProperties(gcload)
+    publish_params = gcload.geoParams
 
-    #Get publish params from class object
-    publish_params = ec.coastwatch.publishParams
-    
-    print("Publishing Item")
-    table_id = aw.publishTable(testPropertiesDict, publish_params, filepath)
+    table_id = aw.publishTable(propertyDict, publish_params, filepath)
     itemcontent = gis.content.get(table_id)
+    seed_url = "None"
 
-    print("Publishing done, sleeping for 20 seconds to AGO processing")
-    time.sleep(20)
+    ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time())
 
 
 
-    print("Overwriting Feature Service")
-    outcome = OverwriteFS.overwriteFeatureService(itemcontent, 
-                                                  generated_url)
-    
-    if outcome["success"]:
-        print( "Service Overwrite was a Success!")
 
-    elif outcome["success"] == False:
-        print( "Service Overwrite Failed!")
 
-        # Show last three steps, for diagnostics
-        for step in outcome[ "items"][-3:]:
-            print( " - Action: '{}', Result: '{}'".format( step[ "action"], step[ "result"]))
+
 
 
 
