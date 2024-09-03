@@ -27,7 +27,7 @@ def main():
     #now we have the das info downloaded and parsed into json
     #lets find what attributes are available
     
-    attribute_list = dc.getActualAttributes(dc.openJson(datasetid))
+    attribute_list = dc.getActualAttributes(dc.openDasJson(datasetid))
 
     #lets set time attr from the json
 

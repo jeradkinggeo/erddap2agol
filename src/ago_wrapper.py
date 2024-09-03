@@ -27,12 +27,17 @@ def makeItemProperties(datasetid:"ec.ERDDAPHandler") -> dict:
     return ItemProperties
 
 def publishTable(item_prop: dict, publish_params: dict, path):
+    
+    publish_params["location_type"] = "coordinates"
+    publish_params["latitudeFieldName"] = "latitude__degrees_north_"  
+    publish_params["longitudeFieldName"] = "longitude__degrees_east_"  
+    
     try:
-        item = gis.content.add(item_prop, path, HasGeometry = True)
-        published_item = item.publish(publish_parameters= publish_params)
+        item = gis.content.add(item_prop, path, HasGeometry=True)
+        published_item = item.publish(publish_parameters=publish_params)
         print(f"Successfully uploaded {item_prop['title']} to ArcGIS Online")
         print(f"Item Details -> \n"
-            f"Item ID: {published_item.id}")
+              f"Item ID: {published_item.id}")
         return published_item.id
     except Exception as e:
         print(f"An error occurred adding the item: {e}")

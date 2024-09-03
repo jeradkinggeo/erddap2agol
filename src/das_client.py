@@ -54,11 +54,15 @@ def saveToJson(data, datasetid: str) -> str:
         json.dump(data, json_file, indent=4)
     return filepath
 
-def openJson(datasetid):
+def openDasJson(datasetid):
     filepath = f"./das_conf/{datasetid}.json"
-    with open(filepath, 'r') as json_file:
-        data = json.load(json_file)
-    return data
+    try:
+        with open(filepath, 'r') as json_file:
+            data = json.load(json_file)
+        return data
+    except FileNotFoundError:
+        print(f"File {filepath} not found.")
+        return None
 
 def getTimeFromJson(datasetid):
     filepath = f"./das_conf/{datasetid}.json"
@@ -73,15 +77,18 @@ def getTimeFromJson(datasetid):
     return start_time, end_time
     
 def convertFromUnix(time):
-    start = datetime.datetime.fromtimestamp(time[0]).strftime('%Y-%m-%d %H:%M:%S') 
-    end = datetime.datetime.fromtimestamp(time[1]).strftime('%Y-%m-%d %H:%M:%S')
+    start = datetime.datetime.utcfromtimestamp(time[0]).strftime('%Y-%m-%dT%H:%M:%S') 
+    end = datetime.datetime.utcfromtimestamp(time[1]).strftime('%Y-%m-%dT%H:%M:%S')
     return start, end
 
+
+#Expand this function to check the values of potential attributes 
 def getActualAttributes(data):
     attributes_set = set() 
     for key, value in data.items():
         if isinstance(value, dict):
-            if "actual_range" in value and "_qc_" not in key and key not in {"latitude", "longitude", "time"}:
+            #added depth to the list of keys to ignore, revisit this later
+            if "actual_range" in value and "_qc_" not in key and key not in {"latitude", "longitude", "time", "depth"}:
                 if "coverage_content_type" in value and value["coverage_content_type"].get("value") == "qualityInformation":
                     continue
                 attributes_set.add(key)
