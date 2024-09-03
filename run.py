@@ -1,4 +1,5 @@
 import src.erddap_client as ec
+import src.das_client as dc
 import src.ago_wrapper as aw
 import tests.test_params as tp
 import logs.updatelog as ul
@@ -12,23 +13,56 @@ from src.utils import OverwriteFS
 def cui():
     while True:
         print("\nWelcome to ERDDAP2AGO!")
-        print("1. Create ERDDAP Item")
-        print("2. Populate Seed File")
-        print("3. Update from ERDDAP")
-        print("4. Exit")
+        print("1. Create JSON from Dataset DAS")
+        print("2. Create ERDDAP Item")
+        print("3. Populate Seed File")
+        print("4. Update from ERDDAP")
+        print("5. Exit")
         
         user_choice = input(": ")
 
         if user_choice == "1":
-            create_erddap_item_menu()
+            create_json_menu()
         elif user_choice == "2":
-            populate_seed_menu()
+            create_erddap_item_menu()
         elif user_choice == "3":
-            update_from_erddap_menu()
+            populate_seed_menu()
         elif user_choice == "4":
-            exit_program()
+            update_from_erddap_menu()
+        elif user_choice == "5":
+            exit_program()    
         else:
             print("Oops.")
+
+def create_json_menu():
+    print("\nCreate JSON from Dataset DAS")
+    print("Select the server of the dataset you want to create a JSON for.")
+    print("1. GCOOS")
+    print("2. Coastwatch")
+    print("3. back")
+
+    user_choice = input(": ")
+
+    if user_choice == "1":
+        gcload = ec.erddapGcoos
+    elif user_choice == "2":
+        gcload = ec.coastwatch 
+    elif user_choice == "3":
+        cui()
+
+    print("Enter the datasetid for the dataset you want to create a JSON for.")
+    datasetid = input("Enter datasetid: ")
+
+    das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
+    parsed_response = dc.parseDasResponse(das_resp)
+    parsed_response = dc.convertToDict(parsed_response)
+    fp = dc.saveToJson(parsed_response, datasetid)
+    print(f"JSON file saved to {fp}")   
+
+
+
+
+
 
 #All this stuff is adapted from main and will be updated later
 def create_erddap_item_menu():

@@ -48,10 +48,11 @@ def convertToDict(data):
     else:
         return data
 
-def saveToJson(data, datasetid):
+def saveToJson(data, datasetid: str) -> str:
     filepath = f"./das_conf/{datasetid}.json"
     with open(filepath, 'w') as json_file:
         json.dump(data, json_file, indent=4)
+    return filepath
 
 def openJson(datasetid):
     filepath = f"./das_conf/{datasetid}.json"
