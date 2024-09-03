@@ -61,7 +61,6 @@ def create_json_menu():
 
 
 
-#All this stuff is adapted from main and will be updated later
 def create_erddap_item_menu():
     print("\nCreate ERDDAP Item")
     print("Select the server of the dataset you want to create an AGOL item for.")
@@ -96,6 +95,7 @@ def create_erddap_item_menu():
     setattr(gcload, "end_time", end)
     setattr(gcload, "datasetid", datasetid)
 
+    # For demonstration change boolean to false for full data
     full_url = gcload.generate_url(False, attribute_list)
     response = ec.ERDDAPHandler.return_response(full_url)
     filepath = ec.ERDDAPHandler.responseToCsv(gcload, response)

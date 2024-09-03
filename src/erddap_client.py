@@ -1,5 +1,6 @@
 #ERDDAP stuff is handled here with the ERDDAPHandler class.
-import sys, os, requests, datetime
+import sys, os, requests
+from datetime import datetime, timedelta
 import pandas as pd
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 from io import StringIO
@@ -28,9 +29,16 @@ class ERDDAPHandler:
 
 
     # Generates URL for ERDDAP request based on class object attributes
+
     def generate_url(self, isSeed: bool, additionalAttr: list = None) -> str:
-        # force isSeed to grab csvp data
+        
         if isSeed:
+            if isinstance(self.start_time, str):
+                self.start_time = datetime.strptime(self.start_time, '%Y-%m-%dT%H:%M:%S')
+                endtime_seed = self.start_time + timedelta(days=3)
+                endtime_seed_str = endtime_seed.strftime('%Y-%m-%dT%H:%M:%S')
+                start_time_str = self.start_time.strftime('%Y-%m-%dT%H:%M:%S')
+
             url = (
                 f"{self.server}{self.datasetid}.csvp?"
                 f"{self.longitude}%2C{self.latitude}"
@@ -42,12 +50,12 @@ class ERDDAPHandler:
 
             url += (
                 f"%2C{self.time}"
-                f"&time%3E%3D{self.start_time}Z&time%3C%3D{self.end_time}Z&orderBy(%22time%22)"
+                f"&time%3E%3D{start_time_str}Z&time%3C%3D{endtime_seed_str}Z&orderBy(%22time%22)"
             )
 
             print(f"Seed URL: {url}",
-                f"Start Time: {self.start_time}",
-                f"End Time: {self.end_time}")
+                f"Start Time: {start_time_str}",
+                f"End Time: {endtime_seed_str}")
         else:
             url = (
                 f"{self.server}{self.datasetid}.csvp?"
