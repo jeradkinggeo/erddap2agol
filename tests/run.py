@@ -50,7 +50,6 @@ def create_json_menu():
     elif user_choice == "3":
         cui()
 
-
     print("Enter the datasetid for the dataset you want to create a JSON for.")
     datasetid = input("Enter datasetid: ")
 
@@ -62,64 +61,56 @@ def create_json_menu():
 
 
 
+#All this stuff is adapted from main and will be updated later
 def create_erddap_item_menu():
     print("\nCreate ERDDAP Item")
-    print("Select the server of the dataset you want to create an AGOL item for.")
-    print("1. GCOOS")
-    print("2. Coastwatch")
+    print("1. FSUNOAAShipWTEOnrt")
+    print("2. gcoos_42G01")
     print("3. back")
 
     user_choice = input(": ")
 
     if user_choice == "1":
-        gcload = ec.erddapGcoos
+        gis = aw.agoConnect()
+        testParams = tp.fsuNoaaShipWTEOnrt_dict["testParams"]
+        additionals = tp.fsuNoaaShipWTEOnrt_dict["additionals"]
+        tabledapDefaultTest = ec.coastwatch
     elif user_choice == "2":
-        gcload = ec.coastwatch 
+        gis = aw.agoConnect()
+        testParams = tp.gcoos_42G01_dict["testParams"]
+        additionals = tp.gcoos_42G01_dict["additionals"]
+        tabledapDefaultTest = ec.erddapGcoos
     elif user_choice == "3":
         cui()
     
-    
-    seed_choice = input("Would you like to create a seed file? (y/n): ")
+    ec.ERDDAPHandler.updateObjectfromParams(tabledapDefaultTest, testParams)
 
-    if seed_choice.lower() == "y":
-        seedbool = True
-    elif seed_choice.lower() == "n":
-        seedbool = False
-    else:
-        print("Invalid input. Going back.")
-        create_json_menu()
+    # Generate the seed_url
+    seed_url = tabledapDefaultTest.createSeedUrl(additionals)
+    full_url = tabledapDefaultTest.generate_url(False, additionals)
 
-    print("Enter the datasetid for the dataset you want to create an AGOL item for.")
-    print("2. back")
-    user_choice = input(": ")
+    # Evaluate response and save to CSV
+    response = ec.ERDDAPHandler.return_response(seed_url)
+    filepath = ec.ERDDAPHandler.responseToCsv(tabledapDefaultTest, response)
 
-    if user_choice == "2":
-        create_erddap_item_menu()
-    else: 
-        datasetid = user_choice
+    #------ERDDAP side is done, now we move to AGO side------
 
-    attribute_list = dc.getActualAttributes(dc.openDasJson(user_choice))
+    # Connect to ArcGIS Online
+    aw.agoConnect()
 
-    unixtime = (dc.getTimeFromJson(datasetid))
-    start, end = dc.convertFromUnix(unixtime)
+    print("Making Item Properties")
+    testPropertiesDict = aw.makeItemProperties(tabledapDefaultTest)
 
-    setattr(gcload, "start_time", start)
-    setattr(gcload, "end_time", end)
-    setattr(gcload, "datasetid", datasetid)
+    # Get publish parameters from the class object
+    publish_params = tabledapDefaultTest.geoParams
 
-    # For demonstration change boolean to false for full data
-    full_url = gcload.generate_url(seedbool, attribute_list)
-    response = ec.ERDDAPHandler.return_response(full_url)
-    filepath = ec.ERDDAPHandler.responseToCsv(gcload, response)
+    # Publish the table to ArcGIS Online
+    print("Publishing Item")
+    table_id = aw.publishTable(testPropertiesDict, publish_params, filepath)
+    itemcontent = gis.content.get(table_id)
+    print(f"Item published successfully with ID: {table_id}")
 
-    gis = aw.agoConnect()
-    propertyDict = aw.makeItemProperties(gcload)
-    publish_params = gcload.geoParams
-
-    table_id = aw.publishTable(propertyDict, publish_params, filepath)
-    seed_url = "None"
-    ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time())
-
+    ul.updateLog(tabledapDefaultTest.datasetid, table_id, seed_url, full_url, tabledapDefaultTest.end_time, ul.get_current_time())
 
 
 def populate_seed_menu():
