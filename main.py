@@ -9,14 +9,21 @@ import time
 
 # note- needs to check if returned json is empty
 
+# def main():
+#     gis = GIS("home")
+#     gcload = ec.erddapGcoos
+#     recent_datasets = gcload.check_if_recent()
+#     print(recent_datasets)
+
+
 
 def main():
     gis = GIS("home")
 
-    #first we get dataset id
+    # first we get dataset id
     datasetid = input("Enter datasetid: ")
 
-    #here we would check which server the dataset belongs 
+    # here we would check which server the dataset belongs 
     gcload = ec.erddapGcoos
 
     das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
@@ -24,12 +31,12 @@ def main():
     parsed_response = dc.convertToDict(parsed_response)
     dc.saveToJson(parsed_response, datasetid)
 
-    #now we have the das info downloaded and parsed into json
-    #lets find what attributes are available
+    # now we have the das info downloaded and parsed into json
+    # lets find what attributes are available
     
     attribute_list = dc.getActualAttributes(dc.openDasJson(datasetid))
 
-    #lets set time attr from the json
+    # lets set time attr from the json
 
     unixtime = (dc.getTimeFromJson(datasetid))
     start, end = dc.convertFromUnix(unixtime)
