@@ -1,20 +1,10 @@
+import src.erddap_client as ec
+import src.das_client as dc
+import src.ago_wrapper as aw
+import tests.test_params as tp
+import logs.updatelog as ul
 from arcgis.gis import GIS
 from src.utils import OverwriteFS
-from src import erddap_client as ec
-from src import ago_wrapper as aw
-from src import das_client as dc
-import logs.updatelog as ul
-import src.glob_var as gv
-import time
-
-# note- needs to check if returned json is empty
-
-# def main():
-#     gis = GIS("home")
-#     gcload = ec.erddapGcoos
-#     recent_datasets = gcload.check_if_recent()
-#     print(recent_datasets)
-
 
 
 def main():
@@ -63,20 +53,3 @@ def main():
     seed_url = "None"
 
     ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time())
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-if __name__ == '__main__':
-    main()  

@@ -28,7 +28,4 @@ A feature service is created and populated with the dataset returned by the ERDD
 -Read configuration file and/or database to identify items for update <br />  
 
 
-
-
-
 ### Note: Project in early development. For the latest progress check the dev branch. 
