@@ -9,10 +9,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src import glob_var as gv
 
 
-#Currently hardcoded for tabledap and gcoos2.
 class ERDDAPHandler:
-    def __init__(self, server, datasetid, fileType, longitude, latitude, time, start_time, end_time, geoParams):
+    def __init__(self, server, serverInfo, datasetid, fileType, longitude, latitude, time, start_time, end_time, geoParams):
         self.server = server
+        self.serverInfo = serverInfo
         self.datasetid = datasetid
         self.fileType = fileType
         self.longitude = longitude
@@ -26,6 +26,15 @@ class ERDDAPHandler:
         url = f"{self.server}{datasetid}.das"
         response = requests.get(url)
         return response.text
+    
+    def getDataList(self) -> list:
+        #https://erddap.gcoos.org/erddap/info/index.csv?page=1&itemsPerPage=1000000000
+        url = f"{self.serverInfo}"
+        response = requests.get(url)
+        data = StringIO(response.text)
+        df = pd.read_csv(data)
+        outlist = df['Dataset ID'].tolist()
+        return outlist
 
 
     # Generates URL for ERDDAP request based on class object attributes
@@ -75,6 +84,7 @@ class ERDDAPHandler:
 
         return url
     
+
     def fetchData(self, url):
         response = self.return_response(url)
         if isinstance(response, dict) and "status_code" in response:
@@ -88,6 +98,29 @@ class ERDDAPHandler:
                 valid_attributes.append(attr)
         return valid_attributes
     
+
+    def check_if_recent(self) -> list:
+        current_time = datetime.utcnow()
+        one_week_ago = current_time - timedelta(weeks=1)
+        
+        recent_datasets = []
+        datasets = self.getDataList()
+        
+        for dataset in datasets:
+            self.datasetid = dataset
+            try:
+                url = self.generate_url(isSeed=True)
+                data = self.fetchData(url)
+                
+                if not data.empty and 'time (UTC)' in data.columns:
+                    latest_time = pd.to_datetime(data['time (UTC)'].max(), utc=True)
+                    if latest_time >= one_week_ago:
+                        recent_datasets.append(dataset)
+            except Exception as e:
+                print(f"Error checking dataset {dataset}: {str(e)}")
+        
+        return recent_datasets
+        
 
     #Might be unnecessary
     def attributeRequest(self, attributes: list) -> list:
@@ -243,6 +276,7 @@ class ERDDAPHandler:
 
 erddapGcoos = ERDDAPHandler(
     server='https://erddap.gcoos.org/erddap/tabledap/',
+    serverInfo = 'https://erddap.gcoos.org/erddap/info/index.csv?page=1&itemsPerPage=1000000000',
     datasetid = None,
     fileType = None,
     longitude = "longitude",
@@ -257,6 +291,7 @@ erddapGcoos = ERDDAPHandler(
 
 coastwatch = ERDDAPHandler(
     server='https://coastwatch.pfeg.noaa.gov/erddap/tabledap/',
+    serverInfo = 'https://coastwatch.pfeg.noaa.gov/erddap/info/index.csv?page=1&itemsPerPage=1000000000',
     datasetid = None,
     fileType = None,
     longitude = "longitude",
