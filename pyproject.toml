@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ERDDAP2AGOL"
+version = "0.0.1"
+description = "Will add this later"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "requests",
+    "pandas",
+    "datetime",
+    "pytz",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "python-dotenv",
+    "arcgis",
+    "io",
+    "os",
+    "sys",
+    "urllib"]
+
