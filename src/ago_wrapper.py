@@ -1,6 +1,7 @@
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer, FeatureLayerCollection
 from src import erddap_client as ec
+from src import das_client as dc
 import os 
 import copy
 
@@ -18,11 +19,14 @@ def agoConnect() -> None:
 #Creating proper item properties that are parsed from ERDDAP metadata will come later.
 def makeItemProperties(datasetid:"ec.ERDDAPHandler") -> dict:
     dataid = datasetid.datasetid
+    attribute_tags = datasetid.attributes
+    tags = ["ERDDAP2AGO", f"{dataid}"]
+    tags.extend(attribute_tags)
     ItemProperties = {
         "title": dataid,
         "type": "CSV",
         "item_type": "Feature Service",
-        "tags": ["ERDDAP2AGO"]
+        "tags": tags
     }
     return ItemProperties
 

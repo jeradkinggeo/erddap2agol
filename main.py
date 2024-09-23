@@ -20,49 +20,53 @@ import time
 def main():
     gis = GIS("home")
 
-    # first we get dataset id
-    datasetid = "gcoos_42G01"
 
     # here we would check which server the dataset belongs 
     gcload = ec.erddapGcoos
 
-    das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
-    parsed_response = dc.parseDasResponse(das_resp)
-    parsed_response = dc.convertToDict(parsed_response)
-    dc.saveToJson(parsed_response, datasetid)
+    datasetid_list = ec.ERDDAPHandler.getDatasetIDList(gcload)
+    print(f"\nDataset ID List: {datasetid_list}")
 
-    # now we have the das info downloaded and parsed into json
-    # lets find what attributes are available
-    
-    attribute_list = dc.getActualAttributes(dc.openDasJson(datasetid))
+    datasetid_list_subset = datasetid_list[15:19]
 
-    # lets set time attr from the json
+    for datasetid in datasetid_list_subset:
+        print(f"{datasetid} is being processed...")
+        time.sleep(1)
+        
 
-    unixtime = (dc.getTimeFromJson(datasetid))
-    start, end = dc.convertFromUnix(unixtime)
+        das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
+        parsed_response = dc.parseDasResponse(das_resp)
+        parsed_response = dc.convertToDict(parsed_response)
+        dc.saveToJson(parsed_response, datasetid)
 
-    setattr(gcload, "start_time", start)
-    setattr(gcload, "end_time", end)
-    setattr(gcload, "datasetid", datasetid)
+        attribute_list = dc.getActualAttributes(dc.openDasJson(datasetid))
 
-    # Generate the seed_url
-    full_url = gcload.generate_url(False, attribute_list)
+        unixtime = (dc.getTimeFromJson(datasetid))
+        start, end = dc.convertFromUnix(unixtime)
 
-    print(f"\nFull URL: {full_url}")
+        setattr(gcload, "start_time", start)
+        setattr(gcload, "end_time", end)
+        setattr(gcload, "datasetid", datasetid)
+        setattr(gcload, "attributes", attribute_list)
 
-    response = ec.ERDDAPHandler.return_response(full_url)
-    filepath = ec.ERDDAPHandler.responseToCsv(gcload, response)
+        full_url = gcload.generate_url(True, attribute_list)
 
-    aw.agoConnect()
+        print(f"\nFull URL: {full_url}")
 
-    propertyDict = aw.makeItemProperties(gcload)
-    publish_params = gcload.geoParams
+        response = ec.ERDDAPHandler.return_response(full_url)
+        filepath = ec.ERDDAPHandler.responseToCsv(gcload, response)
 
-    table_id = aw.publishTable(propertyDict, publish_params, filepath)
-    itemcontent = gis.content.get(table_id)
-    seed_url = "None"
+        aw.agoConnect()
 
-    ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time())
+        propertyDict = aw.makeItemProperties(gcload)
+        publish_params = gcload.geoParams
+
+        table_id = aw.publishTable(propertyDict, publish_params, filepath)
+        seed_url = "None"
+
+        ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time())
+        
+    ul.cleanTemp()
 
 
 

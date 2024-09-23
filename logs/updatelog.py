@@ -1,4 +1,6 @@
 import datetime
+import os
+
 
 def checkforDB():
     logpath = "./logs/update_db.csv"
@@ -15,6 +17,13 @@ def updateLog(ERDDAP_ID, AGOL_ID, seed_url, full_url,lastest_data, last_update) 
         file.write(new_row)
     
     print("Log Updated")
+
+def cleanTemp() -> None:
+    filepath = "./temp"
+    for file in os.listdir(filepath):
+        if file.endswith(".csv"):
+            os.remove(os.path.join(filepath, file))
+
 
 def getTimefromID(itemID):
     logpath = "./logs/update_db.csv"

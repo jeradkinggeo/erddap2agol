@@ -58,7 +58,7 @@ def create_json_menu():
     parsed_response = dc.parseDasResponse(das_resp)
     parsed_response = dc.convertToDict(parsed_response)
     fp = dc.saveToJson(parsed_response, datasetid)
-    print(f"JSON file saved to {fp}")   
+    print(f"\nJSON file saved to {fp}")   
 
 
 

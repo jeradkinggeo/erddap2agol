@@ -10,10 +10,11 @@ from src import glob_var as gv
 
 
 class ERDDAPHandler:
-    def __init__(self, server, serverInfo, datasetid, fileType, longitude, latitude, time, start_time, end_time, geoParams):
+    def __init__(self, server, serverInfo, datasetid, attributes, fileType, longitude, latitude, time, start_time, end_time, geoParams):
         self.server = server
         self.serverInfo = serverInfo
         self.datasetid = datasetid
+        self.attributes = attributes
         self.fileType = fileType
         self.longitude = longitude
         self.latitude = latitude
@@ -27,14 +28,19 @@ class ERDDAPHandler:
         response = requests.get(url)
         return response.text
     
-    def getDataList(self) -> list:
-        #https://erddap.gcoos.org/erddap/info/index.csv?page=1&itemsPerPage=1000000000
+    def getDatasetIDList(self) -> list:
         url = f"{self.serverInfo}"
         response = requests.get(url)
-        data = StringIO(response.text)
-        df = pd.read_csv(data)
-        outlist = df['Dataset ID'].tolist()
-        return outlist
+        data = response.json()
+        
+        column_names = data['table']['columnNames']
+        dataset_id_index = column_names.index("Dataset ID")
+        
+        rows = data['table']['rows']
+        dataset_id_list = [row[dataset_id_index] for row in rows if row[dataset_id_index] != "allDatasets"]
+
+        
+        return dataset_id_list
 
 
     # Generates URL for ERDDAP request based on class object attributes
@@ -276,8 +282,9 @@ class ERDDAPHandler:
 
 erddapGcoos = ERDDAPHandler(
     server='https://erddap.gcoos.org/erddap/tabledap/',
-    serverInfo = 'https://erddap.gcoos.org/erddap/info/index.csv?page=1&itemsPerPage=1000000000',
+    serverInfo = 'https://erddap.gcoos.org/erddap/info/index.json',
     datasetid = None,
+    attributes=None,
     fileType = None,
     longitude = "longitude",
     latitude = "latitude",
@@ -291,8 +298,9 @@ erddapGcoos = ERDDAPHandler(
 
 coastwatch = ERDDAPHandler(
     server='https://coastwatch.pfeg.noaa.gov/erddap/tabledap/',
-    serverInfo = 'https://coastwatch.pfeg.noaa.gov/erddap/info/index.csv?page=1&itemsPerPage=1000000000',
+    serverInfo = 'https://coastwatch.pfeg.noaa.gov/erddap/info/index.json',
     datasetid = None,
+    attributes=None,
     fileType = None,
     longitude = "longitude",
     latitude = "latitude",

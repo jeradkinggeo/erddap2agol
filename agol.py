@@ -7,6 +7,8 @@ from arcgis.gis import GIS
 from src.utils import OverwriteFS
 
 
+#This is an example function of what might be called by an AGOL notebook.
+
 def main():
     gis = GIS("home")
 
