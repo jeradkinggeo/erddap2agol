@@ -10,9 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "requests",
-    "pandas",
-    "arcgis"
-]
+    "pandas"]
 
 [tool.setuptools.packages.find]
 where = ["."]
