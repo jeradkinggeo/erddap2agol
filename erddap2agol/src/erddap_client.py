@@ -4,9 +4,21 @@ from datetime import datetime, timedelta
 import pandas as pd
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 from io import StringIO
+import tempfile
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+
+def getTempDir():
+    # Check if running in AGOL Notebook environment
+    if os.path.exists('/arcgis/home'):
+        temp_dir = os.path.join('/arcgis/home', 'temp')
+    else:
+        # Use the system's temporary directory
+        temp_dir = tempfile.gettempdir()
+        temp_dir = os.path.join(temp_dir, 'erddap_temp')
+    os.makedirs(temp_dir, exist_ok=True)
+    return temp_dir
 
 class ERDDAPHandler:
     def __init__(self, server, serverInfo, datasetid, attributes, fileType, longitude, latitude, time, start_time, end_time, geoParams):
@@ -157,10 +169,9 @@ class ERDDAPHandler:
 
         df = pd.read_csv(csvData, header=None, low_memory=False)
 
-        currentpath = os.getcwd()
-        directory = "/temp/"
-        file_path = f"{currentpath}{directory}{self.datasetid}.csv"
-        print(file_path)
+        temp_dir = getTempDir()
+        file_path = os.path.join(temp_dir, f"{self.datasetid}.csv")
+        print(f"Saving CSV to: {file_path}")
 
         df.to_csv(file_path, index=False, header=False)
 
@@ -272,6 +283,8 @@ class ERDDAPHandler:
     @staticmethod
     def get_current_time() -> str:
         return str(datetime.datetime.now().isoformat())
+    
+
 
 
 # Below we can specify different configurations for the ERDDAP object.
