@@ -1,2 +1,2 @@
-from . import src
-from erddap2agol import *
+from . import agol_run
+
