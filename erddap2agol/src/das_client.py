@@ -38,8 +38,7 @@ def parseDasResponse(response_text):
     return data
 
 def getConfDir():
-    home_dir = os.path.expanduser('~')
-    das_conf_dir = os.path.join(home_dir, 'das_conf')
+    das_conf_dir = os.path.join('/arcgis/home', 'das_conf')
     os.makedirs(das_conf_dir, exist_ok=True)
     return das_conf_dir
 
