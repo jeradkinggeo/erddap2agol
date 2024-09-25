@@ -38,10 +38,11 @@ def parseDasResponse(response_text):
     return data
 
 def getConfDir():
-    cwd = os.getcwd()
-    das_conf_dir = os.path.join(cwd, 'das_conf')
+    home_dir = os.path.expanduser('~')
+    das_conf_dir = os.path.join(home_dir, 'das_conf')
     os.makedirs(das_conf_dir, exist_ok=True)
     return das_conf_dir
+
 
 #need this function to convert OrderedDict to dict for json
 def convertToDict(data):
