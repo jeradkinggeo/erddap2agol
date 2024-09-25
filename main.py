@@ -27,7 +27,7 @@ def main():
     datasetid_list = ec.ERDDAPHandler.getDatasetIDList(gcload)
     print(f"\nDataset ID List: {datasetid_list}")
 
-    datasetid_list_subset = datasetid_list[15:19]
+    datasetid_list_subset = datasetid_list[1:12]
 
     for datasetid in datasetid_list_subset:
         print(f"{datasetid} is being processed...")
