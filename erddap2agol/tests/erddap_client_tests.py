@@ -6,8 +6,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src import erddap_client as ec
-from src.erddap_client import ERDDAPHandler
+# from src import erddap_client as ec
+# from src.erddap_client import ERDDAPHandler
 
 class TestERDDAPHandler(unittest.TestCase):
     def setUp(self):

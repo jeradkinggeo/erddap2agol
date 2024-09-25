@@ -37,6 +37,12 @@ def parseDasResponse(response_text):
 
     return data
 
+def getConfDir():
+    cwd = os.getcwd()
+    das_conf_dir = os.path.join(cwd, 'das_conf')
+    os.makedirs(das_conf_dir, exist_ok=True)
+    return das_conf_dir
+
 #need this function to convert OrderedDict to dict for json
 def convertToDict(data):
     if isinstance(data, OrderedDict):
@@ -47,13 +53,15 @@ def convertToDict(data):
         return data
 
 def saveToJson(data, datasetid: str) -> str:
-    filepath = f"./das_conf/{datasetid}.json"
+    das_conf_dir = getConfDir()
+    filepath = os.path.join(das_conf_dir, f'{datasetid}.json')
     with open(filepath, 'w') as json_file:
         json.dump(data, json_file, indent=4)
     return filepath
 
 def openDasJson(datasetid):
-    filepath = f"./das_conf/{datasetid}.json"
+    das_conf_dir = getConfDir()
+    filepath = os.path.join(das_conf_dir, f'{datasetid}.json')
     try:
         with open(filepath, 'r') as json_file:
             data = json.load(json_file)
@@ -63,7 +71,8 @@ def openDasJson(datasetid):
         return None
 
 def getTimeFromJson(datasetid):
-    filepath = f"./das_conf/{datasetid}.json"
+    das_conf_dir = getConfDir()
+    filepath = os.path.join(das_conf_dir, f'{datasetid}.json')
     with open(filepath, 'r') as json_file:
         data = json.load(json_file)
     
