@@ -1,1 +1,1 @@
-from logs import updatelog
+from . import updatelog

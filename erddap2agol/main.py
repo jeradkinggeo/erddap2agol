@@ -1,12 +1,12 @@
 from arcgis.gis import GIS
-from src.utils import OverwriteFS
-from src import erddap_client as ec
-from src import ago_wrapper as aw
-from src import das_client as dc
-import logs.updatelog as ul
-import src.glob_var as gv
-import time
+from .src import erddap_client as ec
+from .src import das_client as dc
+from .src import ago_wrapper as aw
+from .tests import test_params as tp
+from .logs import updatelog as ul
+from .src.utils import OverwriteFS
 
+import time
 # note- needs to check if returned json is empty
 
 # def main():

@@ -1,1 +1,1 @@
-from tests import test_params
+from . import test_params

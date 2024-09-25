@@ -6,7 +6,6 @@ from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 from io import StringIO
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from src import glob_var as gv
 
 
 class ERDDAPHandler:

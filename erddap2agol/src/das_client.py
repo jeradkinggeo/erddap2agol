@@ -2,8 +2,6 @@ import sys, os, requests, datetime
 import json
 from collections import OrderedDict
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from src.erddap_client import ERDDAPHandler as ec
-import src.glob_var as gv
 
 
 def parseDasResponse(response_text):
