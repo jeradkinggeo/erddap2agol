@@ -1,7 +1,7 @@
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer, FeatureLayerCollection
-from src import erddap_client as ec
-from src import das_client as dc
+from . import erddap_client as ec
+from . import das_client as dc
 import os 
 import copy
 
