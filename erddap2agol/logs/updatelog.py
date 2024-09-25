@@ -1,15 +1,22 @@
 import datetime
 import os
 
+def makeDBdir():
+    DBdir = os.path.join('/arcgis/home', 'update_db')
+    os.makedirs(DBdir, exist_ok=True)
+    return DBdir
 
 def checkforDB():
-    logpath = "./logs/update_db.csv"
+    logpath = makeDBdir()
+    filepath = logpath + "update_db.csv"
     if FileNotFoundError:
-        with open(logpath, 'w') as file:
+        with open(filepath, 'w') as file:
             file.write("ERDDAP_ID,AGOL_ID,seed_url,full_url,last_update\n")
+    return filepath
+
 
 def updateLog(ERDDAP_ID, AGOL_ID, seed_url, full_url,lastest_data, last_update) -> None:
-    logpath = "./logs/update_db.csv"
+    logpath = checkforDB()
     
     new_row = f"{ERDDAP_ID},{AGOL_ID},{seed_url},{full_url},{lastest_data},{last_update}\n"
     
@@ -19,14 +26,14 @@ def updateLog(ERDDAP_ID, AGOL_ID, seed_url, full_url,lastest_data, last_update) 
     print("Log Updated")
 
 def cleanTemp() -> None:
-    filepath = "./temp"
+    filepath = checkforDB()
     for file in os.listdir(filepath):
         if file.endswith(".csv"):
             os.remove(os.path.join(filepath, file))
 
 
 def getTimefromID(itemID):
-    logpath = "./logs/update_db.csv"
+    logpath = checkforDB()
     
     with open(logpath, 'r') as file:
         lines = file.readlines()
@@ -43,7 +50,7 @@ def getTimefromID(itemID):
     return None
     
 def getUrlFromID(itemID):
-    logpath = "./logs/update_db.csv"
+    logpath = checkforDB()
     
     with open(logpath, 'r') as file:
         lines = file.readlines()
@@ -60,7 +67,7 @@ def getUrlFromID(itemID):
     return None
 
 def updateCallFromID(itemID) -> list:
-    logpath = "./logs/update_db.csv"
+    logpath = checkforDB()
     updateParams = []
     with open(logpath, 'r') as file:
         lines = file.readlines()

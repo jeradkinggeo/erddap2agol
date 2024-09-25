@@ -18,7 +18,8 @@ def cui():
         print("2. Create ERDDAP Item")
         print("3. Populate Seed File")
         print("4. Update from ERDDAP")
-        print("5. Exit")
+        print("5. Batch Upload Test")
+        print("6. Exit")
         
         user_choice = input(": ")
 
@@ -31,7 +32,9 @@ def cui():
         elif user_choice == "4":
             update_from_erddap_menu()
         elif user_choice == "5":
-            exit_program()    
+            batch_upload_test()
+        elif user_choice == "6":
+            exit_program()
         else:
             print("Oops.")
 
@@ -191,6 +194,57 @@ def update_from_erddap_menu():
     else:
         print("Update canceled.")
         cui()
+
+def batch_upload_test():
+    gis = GIS("home")
+
+
+    # here we would check which server the dataset belongs 
+    gcload = ec.erddapGcoos
+
+    datasetid_list = ec.ERDDAPHandler.getDatasetIDList(gcload)
+    print(f"\nDataset ID List: {datasetid_list}")
+
+    datasetid_list_subset = datasetid_list[0:20]
+
+    for datasetid in datasetid_list_subset:
+        print(f"{datasetid} is being processed...")      
+
+        das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
+        parsed_response = dc.parseDasResponse(das_resp)
+        parsed_response = dc.convertToDict(parsed_response)
+        dc.saveToJson(parsed_response, datasetid)
+
+        attribute_list = dc.getActualAttributes(dc.openDasJson(datasetid))
+
+        unixtime = (dc.getTimeFromJson(datasetid))
+        start, end = dc.convertFromUnix(unixtime)
+
+        setattr(gcload, "start_time", start)
+        setattr(gcload, "end_time", end)
+        setattr(gcload, "datasetid", datasetid)
+        setattr(gcload, "attributes", attribute_list)
+
+        full_url = gcload.generate_url(True, attribute_list)
+
+        print(f"\nFull URL: {full_url}")
+
+        response = ec.ERDDAPHandler.return_response(full_url)
+        filepath = ec.ERDDAPHandler.responseToCsv(gcload, response)
+
+        aw.agoConnect()
+
+        propertyDict = aw.makeItemProperties(gcload)
+        publish_params = gcload.geoParams
+
+        table_id = aw.publishTable(propertyDict, publish_params, filepath)
+        seed_url = "None"
+
+        ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time())
+        
+    ul.cleanTemp()
+
+
 
 def exit_program():
     print("\nExiting program...")
