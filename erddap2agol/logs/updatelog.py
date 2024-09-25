@@ -8,10 +8,10 @@ def makeDBdir():
 
 def checkforDB():
     logpath = makeDBdir()
-    filepath = logpath + "update_db.csv"
-    if FileNotFoundError:
+    filepath = os.path.join(logpath, "update_db.csv")
+    if not os.path.exists(filepath):
         with open(filepath, 'w') as file:
-            file.write("ERDDAP_ID,AGOL_ID,seed_url,full_url,last_update\n")
+            file.write("ERDDAP_ID,AGOL_ID,seed_url,full_url,lastest_data,last_update\n")
     return filepath
 
 
@@ -26,7 +26,7 @@ def updateLog(ERDDAP_ID, AGOL_ID, seed_url, full_url,lastest_data, last_update) 
     print("Log Updated")
 
 def cleanTemp() -> None:
-    filepath = checkforDB()
+    filepath = os.path.join('/arcgis/home', 'temp')
     for file in os.listdir(filepath):
         if file.endswith(".csv"):
             os.remove(os.path.join(filepath, file))
