@@ -16,12 +16,14 @@ def agoConnect() -> None:
     except Exception as e:
         print(f"An error occurred connecting to ArcGIS Online: {e}")
 
-#Creating proper item properties that are parsed from ERDDAP metadata will come later.
-def makeItemProperties(datasetid:"ec.ERDDAPHandler") -> dict:
+def makeItemProperties(datasetid: "ec.ERDDAPHandler") -> dict:
     dataid = datasetid.datasetid
     attribute_tags = datasetid.attributes
     tags = ["ERDDAP2AGO", f"{dataid}"]
-    tags.extend(attribute_tags)
+
+    if attribute_tags is not None:
+        tags.extend(attribute_tags)
+
     ItemProperties = {
         "title": dataid,
         "type": "CSV",
