@@ -100,6 +100,7 @@ class ERDDAPHandler:
 
         return url
     
+    
 
     def fetchData(self, url):
         response = self.return_response(url)
@@ -194,8 +195,8 @@ class ERDDAPHandler:
     # Creates a list of time values between start and end time
     def iterateTime(self, incrementType: str, increment: int) -> list:
         timeList = []
-        start = datetime.datetime.fromisoformat(self.start_time)
-        end = datetime.datetime.fromisoformat(self.end_time)
+        start = datetime.fromisoformat(self.start_time)
+        end = datetime.fromisoformat(self.end_time)
         current = start
         if incrementType == "days":
             while current <= end:
@@ -209,8 +210,8 @@ class ERDDAPHandler:
     
     # We will use this to decide how to chunk the dataset
     def calculateTimeRange(self, intervalType=None) -> int:
-        start = datetime.datetime.fromisoformat(self.start_time)
-        end = datetime.datetime.fromisoformat(self.end_time)
+        start = datetime.fromisoformat(self.start_time)
+        end = datetime.fromisoformat(self.end_time)
         
         if intervalType is None:
             return (end - start).days
