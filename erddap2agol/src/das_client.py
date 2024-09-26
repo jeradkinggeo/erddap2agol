@@ -38,7 +38,7 @@ def parseDasResponse(response_text):
     return data
 
 def getConfDir():
-    das_conf_dir = os.path.join('/arcgis/home', 'das_conf')
+    das_conf_dir = os.path.join('/arcgis/home', 'e2a_das_files')
     os.makedirs(das_conf_dir, exist_ok=True)
     return das_conf_dir
 
@@ -101,4 +101,8 @@ def getActualAttributes(data):
                 attributes_set.add(key)
 
     return list(attributes_set)
+
+def displayAttributes(timeintv: int , attributes: list) -> None:
+    print(f"\nThere are {timeintv} days worth of records")
+    print(f"\nAttributes: {attributes}")
 

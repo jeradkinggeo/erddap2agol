@@ -8,11 +8,10 @@ import tempfile
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-
 def getTempDir():
     # Check if running in AGOL Notebook environment
     if os.path.exists('/arcgis/home'):
-        temp_dir = os.path.join('/arcgis/home', 'temp')
+        temp_dir = os.path.join('/arcgis/home', 'e2a_temp')
     else:
         # Use the system's temporary directory
         temp_dir = tempfile.gettempdir()
@@ -207,6 +206,25 @@ class ERDDAPHandler:
                 timeList.append(current.isoformat())
                 current += datetime.timedelta(hours=increment)
         return timeList
+    
+    # We will use this to decide how to chunk the dataset
+    def calculateTimeRange(self, intervalType=None) -> int:
+        start = datetime.datetime.fromisoformat(self.start_time)
+        end = datetime.datetime.fromisoformat(self.end_time)
+        
+        if intervalType is None:
+            return (end - start).days
+        
+        elif intervalType == "months":
+            year_diff = end.year - start.year
+            month_diff = end.month - start.month
+            
+            total_months = year_diff * 12 + month_diff
+            return total_months
+
+        else:
+            raise ValueError("Invalid interval type.")
+
 
     # Creates a seed URL to download a small amount of data. There are probably better ways to just grab the first record.
     def createSeedUrl(self, additionalAttr: list = None) -> str:
@@ -311,6 +329,22 @@ erddapGcoos = ERDDAPHandler(
 coastwatch = ERDDAPHandler(
     server='https://coastwatch.pfeg.noaa.gov/erddap/tabledap/',
     serverInfo = 'https://coastwatch.pfeg.noaa.gov/erddap/info/index.json',
+    datasetid = None,
+    attributes=None,
+    fileType = None,
+    longitude = "longitude",
+    latitude = "latitude",
+    time = 'time',
+    start_time = None,
+    end_time= None,
+    geoParams = {"locationType": "coordinates",
+        "latitudeFieldName": "latitude (degrees_north)",
+        "longitudeFieldName": "longitude (degrees_east)"}
+    )
+
+custom_server = ERDDAPHandler(
+    server= None,
+    serverInfo = None,
     datasetid = None,
     attributes=None,
     fileType = None,

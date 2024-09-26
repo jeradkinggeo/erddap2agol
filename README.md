@@ -1,7 +1,27 @@
 # ERDDAP2AGOL
 
-The goal of this project is to establish a connection between NOAA ERDDAP servers and ArcGIS Online (AGO) content. This project will begin with updating existing AGO items based on ERDDAP data,
-with the goal of creating a "hands-off" ETL program to automatically update and manage ERDDAP data hosted on ArcGIS Online. 
+The goal of this project is to establish a connection between ERDDAP services and ArcGIS Online (AGOL). Erddap2agol will be a "hands-off" ETL program to automatically update and manage ERDDAP data hosted on ArcGIS Online. 
+Erddap2agol is a service provided by the Gulf of Mexico Ocean Observing System (GCOOS) and is intended for use by other IOOS regional associations or data providers using ERDDAP. As this project is in active development, please
+see the "roadmap" section.
+
+## Roadmap
+The ERDDAP2AGOL tool is under active development, and is not ready to be deployed. To be notified when the tool is ready for use. <br />
+
+**please monitor the GCOOS newsletter for an announcment of the product release.** <br />
+
+**erddap2agol will be ready for use December 2024**<br />
+
+## What to expect
+* Your ERDDAP data will be available in three product levels         
+- NRT: 7 day moving window. (L1)
+- Historical: Updated weekly, contains all data. (L2)
+- QC Historical: QC Flags, low quality records removed. (L3) <br />
+
+* Multiple install options
+- Install directly from an AGOL notebook
+- Build AGOL environment locally <br /> 
+
+* Monitor your ERDDAP collection with generated update logs
 
 ## Core Modules
 ### Das_client.py
@@ -27,5 +47,3 @@ A feature service is created and populated with the dataset returned by the ERDD
 -Ensure visibility of updates with update logs <br />
 -Read configuration file and/or database to identify items for update <br />  
 
-
-### Note: Project in early development. For the latest progress check the dev branch. 

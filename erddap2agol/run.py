@@ -81,18 +81,7 @@ def create_erddap_item_menu():
         gcload = ec.coastwatch 
     elif user_choice == "3":
         cui()
-    
-    
-    seed_choice = input("Would you like to create a seed file? (y/n): ")
-
-    if seed_choice.lower() == "y":
-        seedbool = True
-    elif seed_choice.lower() == "n":
-        seedbool = False
-    else:
-        print("Invalid input. Going back.")
-        create_json_menu()
-
+     
     print("Enter the datasetid for the dataset you want to create an AGOL item for.")
     print("2. back")
     user_choice = input(": ")
@@ -110,6 +99,20 @@ def create_erddap_item_menu():
     setattr(gcload, "start_time", start)
     setattr(gcload, "end_time", end)
     setattr(gcload, "datasetid", datasetid)
+
+    timeintv = ec.ERDDAPHandler.calculateTimeRange(gcload)
+
+    dc.displayAttributes(timeintv, attribute_list)
+
+    seed_choice = input("Would you like to create a seed file? (y/n): ")
+
+    if seed_choice.lower() == "y":
+        seedbool = True
+    elif seed_choice.lower() == "n":
+        seedbool = False
+    else:
+        print("Invalid input. Going back.")
+        create_json_menu()
 
     # For demonstration change boolean to false for full data
     full_url = gcload.generate_url(seedbool, attribute_list)
