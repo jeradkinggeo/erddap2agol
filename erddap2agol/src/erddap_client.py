@@ -33,10 +33,6 @@ class ERDDAPHandler:
         self.end_time = end_time
         self.geoParams = geoParams
 
-    def getDas(self, datasetid: str) -> str:
-        url = f"{self.server}{datasetid}.das"
-        response = requests.get(url)
-        return response.text
     
     def getDatasetIDList(self) -> list:
         url = f"{self.serverInfo}"
@@ -51,6 +47,16 @@ class ERDDAPHandler:
 
         
         return dataset_id_list
+    
+    def getDas(self, datasetid: str) -> str:
+        dataset_id_list = self.getDatasetIDList()
+        if datasetid not in dataset_id_list:
+            print(f"Dataset ID {datasetid} not found in the list of available datasets.")
+            return None
+        else:
+            url = f"{self.server}{datasetid}.das"
+            response = requests.get(url)
+            return response.text
 
 
     # Generates URL for ERDDAP request based on class object attributes
@@ -115,7 +121,7 @@ class ERDDAPHandler:
                 valid_attributes.append(attr)
         return valid_attributes
     
-
+    
     def check_if_recent(self) -> list:
         current_time = datetime.utcnow()
         one_week_ago = current_time - timedelta(weeks=1)
@@ -139,7 +145,7 @@ class ERDDAPHandler:
         return recent_datasets
         
 
-    #Might be unnecessary
+    #Works
     def attributeRequest(self, attributes: list) -> list:
         oldStart = self.start_time
         oldEnd = self.end_time
@@ -162,7 +168,7 @@ class ERDDAPHandler:
 
 
 
-    # Converts response to dataframe then saves it to a csv file, returns the file path
+    #Works and important
     def responseToCsv(self, response: any) -> str:
         csvResponse = response
         csvData = StringIO(csvResponse)
@@ -177,6 +183,7 @@ class ERDDAPHandler:
 
         return file_path
 
+    #Works and important
     def responseToJson(self, response: any) -> str:
         jsonResponse = response
         jsonData = StringIO(jsonResponse)

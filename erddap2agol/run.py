@@ -14,57 +14,26 @@ from arcgis.gis import GIS
 def cui():
     while True:
         print("\nWelcome to ERDDAP2AGO!")
-        print("1. Create JSON from Dataset DAS")
-        print("2. Create ERDDAP Item")
-        print("3. Populate Seed File")
-        print("4. Update from ERDDAP")
-        print("5. Batch Upload Test")
-        print("6. Exit")
+        print("1. Create ERDDAP Item")
+        print("2. Populate Seed File")
+        print("3. Update from ERDDAP")
+        print("4. Batch Upload Test")
+        print("5. Exit")
         
         user_choice = input(": ")
 
         if user_choice == "1":
-            create_json_menu()
-        elif user_choice == "2":
             create_erddap_item_menu()
-        elif user_choice == "3":
+        elif user_choice == "2":
             populate_seed_menu()
-        elif user_choice == "4":
+        elif user_choice == "3":
             update_from_erddap_menu()
-        elif user_choice == "5":
+        elif user_choice == "4":
             batch_upload_test()
         elif user_choice == "6":
             exit_program()
         else:
             print("Oops.")
-
-def create_json_menu():
-    print("\nCreate JSON from Dataset DAS")
-    print("Select the server of the dataset you want to create a JSON for.")
-    print("1. GCOOS")
-    print("2. Coastwatch")
-    print("3. back")
-
-    user_choice = input(": ")
-
-    if user_choice == "1":
-        gcload = ec.erddapGcoos
-    elif user_choice == "2":
-        gcload = ec.coastwatch 
-    elif user_choice == "3":
-        cui()
-
-
-    print("Enter the datasetid for the dataset you want to create a JSON for.")
-    datasetid = input("Enter datasetid: ")
-
-    das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
-    parsed_response = dc.parseDasResponse(das_resp)
-    parsed_response = dc.convertToDict(parsed_response)
-    fp = dc.saveToJson(parsed_response, datasetid)
-    print(f"\nJSON file saved to {fp}")   
-
-
 
 def create_erddap_item_menu():
     print("\nCreate ERDDAP Item")
@@ -91,13 +60,21 @@ def create_erddap_item_menu():
     else: 
         datasetid = user_choice
 
-    das_data = dc.openDasJson(datasetid)
+        datasetid = input("Enter datasetid: ")
 
-    if das_data is None:
+    das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
+    if das_resp is None:
         print(f"No data found for dataset {datasetid}.")
         print("The dataset may not exist or the data may not be available.")
         print("Returning to main menu...")
         cui()
+    parsed_response = dc.parseDasResponse(das_resp)
+    parsed_response = dc.convertToDict(parsed_response)
+    fp = dc.saveToJson(parsed_response, datasetid)
+    print(f"\nJSON file saved to {fp}")   
+
+
+    das_data = dc.openDasJson(datasetid)
 
     attribute_list = dc.getActualAttributes(das_data, gcload)
 
@@ -120,7 +97,6 @@ def create_erddap_item_menu():
         seedbool = False
     else:
         print("Invalid input. Going back.")
-        create_json_menu()
 
     # For demonstration change boolean to false for full data
     full_url = gcload.generate_url(seedbool, attribute_list)
