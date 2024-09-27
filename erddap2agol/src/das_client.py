@@ -40,7 +40,16 @@ def parseDasResponse(response_text):
     return data
 
 def getConfDir():
-    das_conf_dir = os.path.join('/arcgis/home', 'e2a_das_files')
+
+    agol_home = os.getenv('AGOL_HOME', '/arcgis/home')
+    print(f"AGOL_HOME is set to: {agol_home}")
+
+    base_dir = agol_home
+    print(f"Base directory is: {base_dir}")
+
+    das_conf_dir = os.path.join(base_dir, 'das_conf')
+    print(f"DAS configuration directory is: {das_conf_dir}")
+
     os.makedirs(das_conf_dir, exist_ok=True)
     return das_conf_dir
 

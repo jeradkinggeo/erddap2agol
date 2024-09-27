@@ -91,7 +91,15 @@ def create_erddap_item_menu():
     else: 
         datasetid = user_choice
 
-    attribute_list = dc.getActualAttributes(dc.openDasJson(user_choice), gcload)
+    das_data = dc.openDasJson(datasetid)
+
+    if das_data is None:
+        print(f"No data found for dataset {datasetid}.")
+        print("The dataset may not exist or the data may not be available.")
+        print("Returning to main menu...")
+        cui()
+
+    attribute_list = dc.getActualAttributes(das_data, gcload)
 
     unixtime = (dc.getTimeFromJson(datasetid))
     start, end = dc.convertFromUnix(unixtime)

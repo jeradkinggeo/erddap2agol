@@ -12,14 +12,14 @@ The ERDDAP2AGOL tool is under active development, and is not ready to be deploye
 **erddap2agol will be ready for use December 2024**<br />
 
 ## What to expect
-* Your ERDDAP data will be available in three product levels         
+* Your ERDDAP data will be available in three product levels.         
 - NRT: 7 day moving window. (L1)
 - Historical: Updated weekly, contains all data. (L2)
 - QC Historical: QC Flags, low quality records removed. (L3) <br />
 
-* Multiple install options
-- Install directly from an AGOL notebook
-- Build AGOL environment locally <br /> 
+* Multiple install options.
+- Install directly from an AGOL notebook.
+- Build AGOL environment locally. <br /> 
 
 * Monitor your ERDDAP collection with generated update logs
 
