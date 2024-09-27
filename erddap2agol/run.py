@@ -60,7 +60,6 @@ def create_erddap_item_menu():
     else: 
         datasetid = user_choice
 
-        datasetid = input("Enter datasetid: ")
 
     das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
     if das_resp is None:
@@ -202,7 +201,7 @@ def batch_upload_test():
         parsed_response = dc.convertToDict(parsed_response)
         dc.saveToJson(parsed_response, datasetid)
 
-        attribute_list = dc.getActualAttributes(dc.openDasJson(datasetid))
+        attribute_list = dc.getActualAttributes(dc.openDasJson(datasetid), gcload)
 
         unixtime = (dc.getTimeFromJson(datasetid))
         start, end = dc.convertFromUnix(unixtime)
