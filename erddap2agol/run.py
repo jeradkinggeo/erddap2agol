@@ -91,7 +91,7 @@ def create_erddap_item_menu():
     else: 
         datasetid = user_choice
 
-    attribute_list = dc.getActualAttributes(dc.openDasJson(user_choice))
+    attribute_list = dc.getActualAttributes(dc.openDasJson(user_choice), gcload)
 
     unixtime = (dc.getTimeFromJson(datasetid))
     start, end = dc.convertFromUnix(unixtime)

@@ -1,6 +1,8 @@
 import sys, os, requests, datetime 
 import json
 from collections import OrderedDict
+from . import erddap_client as ec
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
@@ -65,7 +67,11 @@ def openDasJson(datasetid):
     try:
         with open(filepath, 'r') as json_file:
             data = json.load(json_file)
-        return data
+            if "error" in data and data["error"]["Found"] is not None:
+                print(f"File {filepath} does not contain data.")
+                return None
+            else:
+                return data
     except FileNotFoundError:
         print(f"File {filepath} not found.")
         return None
@@ -90,7 +96,7 @@ def convertFromUnix(time):
 
 
 #Expand this function to check the values of potential attributes 
-def getActualAttributes(data):
+def getActualAttributes(data, erddapObject: ec.ERDDAPHandler) -> list:
     attributes_set = set() 
     for key, value in data.items():
         if isinstance(value, dict):
@@ -100,6 +106,7 @@ def getActualAttributes(data):
                     continue
                 attributes_set.add(key)
 
+    setattr(erddapObject, "attributes", list(attributes_set))
     return list(attributes_set)
 
 def displayAttributes(timeintv: int , attributes: list) -> None:
