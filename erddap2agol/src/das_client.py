@@ -103,6 +103,12 @@ def convertFromUnix(time):
     end = datetime.datetime.utcfromtimestamp(time[1]).strftime('%Y-%m-%dT%H:%M:%S')
     return start, end
 
+def convertFromUnixDT(time_tuple):
+    start_unix, end_unix = time_tuple
+    start_datetime = datetime.datetime.utcfromtimestamp(start_unix)
+    end_datetime = datetime.datetime.utcfromtimestamp(end_unix)
+    return start_datetime, end_datetime
+
 
 #Expand this function to check the values of potential attributes 
 def getActualAttributes(data, erddapObject: ec.ERDDAPHandler) -> list:

@@ -19,6 +19,12 @@ def getTempDir():
     os.makedirs(temp_dir, exist_ok=True)
     return temp_dir
 
+def cleanTemp() -> None:
+    filepath = os.path.join('/arcgis/home', 'e2a_temp')
+    for file in os.listdir(filepath):
+        if file.endswith(".csv"):
+            os.remove(os.path.join(filepath, file))
+
 class ERDDAPHandler:
     def __init__(self, server, serverInfo, datasetid, attributes, fileType, longitude, latitude, time, start_time, end_time, geoParams):
         self.server = server

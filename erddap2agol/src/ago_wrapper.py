@@ -16,6 +16,7 @@ def agoConnect() -> None:
     except Exception as e:
         print(f"An error occurred connecting to ArcGIS Online: {e}")
 
+#Important function and should be improved
 def makeItemProperties(datasetid: "ec.ERDDAPHandler") -> dict:
     dataid = datasetid.datasetid
     attribute_tags = datasetid.attributes
@@ -32,6 +33,7 @@ def makeItemProperties(datasetid: "ec.ERDDAPHandler") -> dict:
     }
     return ItemProperties
 
+#Also important and should be improved 
 def publishTable(item_prop: dict, publish_params: dict, path):
     
     publish_params["location_type"] = "coordinates"
@@ -69,6 +71,46 @@ def searchContentByTag(tag: str) -> list:
     
     except Exception as e:
         print(f"An error occurred while searching for items: {e}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #The below functions have no utility right now
 #-----------------------------------------------------------

@@ -2,7 +2,7 @@ import datetime
 import os
 
 def makeDBdir():
-    DBdir = os.path.join('/arcgis/home', 'update_db')
+    DBdir = os.path.join('/arcgis/home', 'e2a_update_db')
     os.makedirs(DBdir, exist_ok=True)
     return DBdir
 
@@ -24,12 +24,6 @@ def updateLog(ERDDAP_ID, AGOL_ID, seed_url, full_url,lastest_data, last_update) 
         file.write(new_row)
     
     print("Log Updated")
-
-def cleanTemp() -> None:
-    filepath = os.path.join('/arcgis/home', 'temp')
-    for file in os.listdir(filepath):
-        if file.endswith(".csv"):
-            os.remove(os.path.join(filepath, file))
 
 
 def getTimefromID(itemID):
