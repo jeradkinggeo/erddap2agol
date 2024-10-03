@@ -53,6 +53,11 @@ def getConfDir():
     os.makedirs(das_conf_dir, exist_ok=True)
     return das_conf_dir
 
+def checkForJson(datasetid: str) -> bool:
+    das_conf_dir = getConfDir()
+    filepath = os.path.join(das_conf_dir, f'{datasetid}.json')
+    return os.path.exists(filepath)
+
 
 #need this function to convert OrderedDict to dict for json
 def convertToDict(data):

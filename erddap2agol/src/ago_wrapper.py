@@ -1,8 +1,6 @@
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer, FeatureLayerCollection
 from . import erddap_client as ec
-from . import das_client as dc
-import os 
 import copy
 
 gis = GIS("home")
@@ -11,7 +9,7 @@ gis = GIS("home")
 def agoConnect() -> None:
     try:
         gis = GIS("home")
-        print("Succesfully connected to " + gis.properties.portalName + " on " + gis.properties.customBaseUrl)
+        print("\nSuccesfully connected to " + gis.properties.portalName + " on " + gis.properties.customBaseUrl)
         return gis
     except Exception as e:
         print(f"An error occurred connecting to ArcGIS Online: {e}")

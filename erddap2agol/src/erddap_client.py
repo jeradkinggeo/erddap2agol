@@ -108,12 +108,10 @@ class ERDDAPHandler:
                 f"&time%3E%3D{self.start_time}Z&time%3C%3D{self.end_time}Z&orderBy(%22time%22)"
             )
 
-            print(f"Generated URL: {url}")
+            print(f"\nGenerated URL: {url}")
 
         return url
-    
-    
-
+        
     def fetchData(self, url):
         response = self.return_response(url)
         if isinstance(response, dict) and "status_code" in response:
@@ -127,29 +125,6 @@ class ERDDAPHandler:
                 valid_attributes.append(attr)
         return valid_attributes
     
-    
-    def check_if_recent(self) -> list:
-        current_time = datetime.utcnow()
-        one_week_ago = current_time - timedelta(weeks=1)
-        
-        recent_datasets = []
-        datasets = self.getDataList()
-        
-        for dataset in datasets:
-            self.datasetid = dataset
-            try:
-                url = self.generate_url(isSeed=True)
-                data = self.fetchData(url)
-                
-                if not data.empty and 'time (UTC)' in data.columns:
-                    latest_time = pd.to_datetime(data['time (UTC)'].max(), utc=True)
-                    if latest_time >= one_week_ago:
-                        recent_datasets.append(dataset)
-            except Exception as e:
-                print(f"Error checking dataset {dataset}: {str(e)}")
-        
-        return recent_datasets
-        
 
     #Works
     def attributeRequest(self, attributes: list) -> list:
@@ -183,7 +158,6 @@ class ERDDAPHandler:
 
         temp_dir = getTempDir()
         file_path = os.path.join(temp_dir, f"{self.datasetid}.csv")
-        print(f"Saving CSV to: {file_path}")
 
         df.to_csv(file_path, index=False, header=False)
 
