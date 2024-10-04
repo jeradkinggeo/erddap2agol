@@ -132,7 +132,7 @@ def getActualAttributes(dasJson, erddapObject: ec.ERDDAPHandler) -> list:
         if isinstance(value, dict):
             #added depth to the list of keys to ignore, revisit this later
             #added it back without changing anything hope nothing breaks :3
-            if "actual_range" in value and "_qc_" not in key and key not in {"latitude", "longitude", "time"}:
+            if "actual_range" in value and "_qc_" not in key and key not in {"latitude", "longitude", "time", "depth"}:
                 if "coverage_content_type" in value and value["coverage_content_type"].get("value") == "qualityInformation":
                     continue
                 attributes_set.add(key)

@@ -25,6 +25,7 @@ def cleanTemp() -> None:
         if file.endswith(".csv"):
             os.remove(os.path.join(filepath, file))
 
+#Sometimes the directory or file isnt created 
 def getErddapConfDir() -> str:
     agol_home = os.getenv('AGOL_HOME', '/arcgis/home')
     base_dir = agol_home

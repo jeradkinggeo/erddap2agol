@@ -70,28 +70,6 @@ def searchContentByTag(tag: str) -> list:
     except Exception as e:
         print(f"An error occurred while searching for items: {e}")
 
-def createFolder(ServerName: ec.ERDDAPHandler) -> None:
-    serverurl = ServerName.serverurl 
-    filepath = ec.getErddapConfDir() 
-    
-    with open(filepath, 'r') as f:
-        server_list = json.load(f)
-    
-    folder_name = None  
-    
-    for server in server_list:
-        if server['url'] == serverurl:
-            folder_name = server['name']
-            break
-
-    if folder_name:
-        try:
-            gis.content.create_folder(folder_name)
-            print(f"Successfully created folder '{folder_name}'")
-        except Exception as e:
-            print(f"An error occurred creating the folder: {e}")
-    else:
-        print(f"Server with URL '{serverurl}' not found.")
 
 
 

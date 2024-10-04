@@ -386,6 +386,7 @@ def nrt_creation_test():
 
             ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time(), 1)
 
+# come back to this
 def custom_server_menu():
     print("Server Selection")
     ec.showErddapList()

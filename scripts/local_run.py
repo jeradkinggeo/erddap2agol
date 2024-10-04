@@ -19,7 +19,7 @@ def main():
     # gcload = ec.ERDDAPHandler.setErddap(ec.custom_server, int(uc))
     # aw.createFolder(gcload)
 
-    
+        
     
 
     run.cui()
