@@ -361,7 +361,7 @@ class ERDDAPHandler:
 
     # This is not very readable.
     @staticmethod
-    def return_response(generatedUrl: str) -> dict:
+    def return_response(generatedUrl: str):
         try:
             response = requests.get(generatedUrl)
             response.raise_for_status()
