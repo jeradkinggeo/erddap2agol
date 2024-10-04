@@ -14,13 +14,15 @@ from arcgis.gis import GIS
 
 def cui():
     while True:
-        print("\nWelcome to ERDDAP2AGO!")
+        print("\nWelcome to ERDDAP2AGOL!")
+        print("GCOOS GIS, 2024")
         print("1. Create ERDDAP Item")
         print("2. Populate Seed File")
         print("3. Update from ERDDAP")
         print("4. Batch Upload _Test")
         print("5. NRT Creation _Test")
-        print("6. Exit")
+        print("6. Server Selection _Test")
+        print("7. Exit")
         
         user_choice = input(": ")
 
@@ -35,11 +37,11 @@ def cui():
         elif user_choice == "5":
             nrt_creation_test()
         elif user_choice == "6":
+            custom_server_menu()
+        elif user_choice == "7":
             exit_program()
         elif user_choice == "42":
             print("The answer to life, the universe, and everything.")
-        elif user_choice == "Testing":
-            lm.NRTUpdateAGOL("GCOOS")
         else:
             print("Oops.")
 
@@ -124,7 +126,7 @@ def populate_seed_menu():
     print("\nUpdate from ERDDAP")
     print("Searching your content for ERDDAP items...")
     gis = aw.agoConnect()
-    items = aw.searchContentByTag("ERDDAP2AGO")
+    items = aw.searchContentByTag("erddap2agol")
     
 
     print(f"Item structure: {type(items[0])}")
@@ -157,7 +159,7 @@ def update_from_erddap_menu():
     print("\nUpdate from ERDDAP")
     print("Searching your content for ERDDAP items...")
     gis = aw.agoConnect()
-    items = aw.searchContentByTag("ERDDAP2AGO")
+    items = aw.searchContentByTag("erddap2agol")
     
 
     print(f"Item structure: {type(items[0])}")
@@ -384,6 +386,15 @@ def nrt_creation_test():
 
             ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time(), 1)
 
+def custom_server_menu():
+    print("Server Selection")
+    ec.showErddapList()
+    uc = input("\nSelect an ERDDAP server to use: ")
+    print("Type back to go back")
+    gcload = ec.ERDDAPHandler.setErddap(ec.custom_server, int(uc))
+
+    if uc == "back":
+        cui()
 
 
 

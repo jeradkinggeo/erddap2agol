@@ -1,7 +1,7 @@
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer, FeatureLayerCollection
 from . import erddap_client as ec
-import copy
+import copy, json
 
 gis = GIS("home")
 
@@ -18,7 +18,7 @@ def agoConnect() -> None:
 def makeItemProperties(datasetid: "ec.ERDDAPHandler") -> dict:
     dataid = datasetid.datasetid
     attribute_tags = datasetid.attributes
-    tags = ["ERDDAP2AGO", f"{dataid}"]
+    tags = ["erddap2agol", f"{dataid}"]
 
     if attribute_tags is not None:
         tags.extend(attribute_tags)
@@ -69,6 +69,30 @@ def searchContentByTag(tag: str) -> list:
     
     except Exception as e:
         print(f"An error occurred while searching for items: {e}")
+
+def createFolder(ServerName: ec.ERDDAPHandler) -> None:
+    serverurl = ServerName.serverurl 
+    filepath = ec.getErddapConfDir() 
+    
+    with open(filepath, 'r') as f:
+        server_list = json.load(f)
+    
+    folder_name = None  
+    
+    for server in server_list:
+        if server['url'] == serverurl:
+            folder_name = server['name']
+            break
+
+    if folder_name:
+        try:
+            gis.content.create_folder(folder_name)
+            print(f"Successfully created folder '{folder_name}'")
+        except Exception as e:
+            print(f"An error occurred creating the folder: {e}")
+    else:
+        print(f"Server with URL '{serverurl}' not found.")
+
 
 
 

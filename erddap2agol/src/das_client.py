@@ -114,14 +114,25 @@ def convertFromUnixDT(time_tuple):
     end_datetime = datetime.datetime.utcfromtimestamp(end_unix)
     return start_datetime, end_datetime
 
+# This function doesn't go anywhere yet but we will need to include this in initial read functions
+def checkDataValidity(dasJson) -> bool:
+    for key, value in dasJson.items():
+        if isinstance(value, dict):
+            if {"latitude", "longitude", "time"} not in key:
+                return False
+            else:
+                return True
+    
+
 
 #Expand this function to check the values of potential attributes 
-def getActualAttributes(data, erddapObject: ec.ERDDAPHandler) -> list:
+def getActualAttributes(dasJson, erddapObject: ec.ERDDAPHandler) -> list:
     attributes_set = set() 
-    for key, value in data.items():
+    for key, value in dasJson.items():
         if isinstance(value, dict):
             #added depth to the list of keys to ignore, revisit this later
-            if "actual_range" in value and "_qc_" not in key and key not in {"latitude", "longitude", "time", "depth"}:
+            #added it back without changing anything hope nothing breaks :3
+            if "actual_range" in value and "_qc_" not in key and key not in {"latitude", "longitude", "time"}:
                 if "coverage_content_type" in value and value["coverage_content_type"].get("value") == "qualityInformation":
                     continue
                 attributes_set.add(key)

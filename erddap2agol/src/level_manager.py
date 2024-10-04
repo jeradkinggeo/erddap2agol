@@ -58,23 +58,15 @@ def NRTFindAGOL() -> list:
     nrt_dict  = ul.updateCallFromNRT(1)
     return nrt_dict
 
-def NRTUpdateAGOL(Server_Selection: str) -> None:
-    if Server_Selection == "GCOOS":
-        gcload = ec.erddapGcoos
-    elif Server_Selection == "Coastwatch":
-        gcload = ec.erddapCoastwatch
-    #Custom server handling here
-    else:
-        print("Invalid Server Selection")
-        
+def NRTUpdateAGOL(Server_Selection: ec.ERDDAPHandler) -> None:
+    gcload = Server_Selection    
 
     nrt_dict  = NRTFindAGOL()
 
     for datasetid, itemid in nrt_dict.items():
         startWindow, endWindow = movingWindow(isStr=True)
         das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
-        parsed_response = dc.parseDasResponse(das_resp)
-        parsed_response = dc.convertToDict(parsed_response)
+        parsed_response = dc.convertToDict(dc.parseDasResponse(das_resp))
         fp = dc.saveToJson(parsed_response, datasetid)
         das_data = dc.openDasJson(datasetid)
         attribute_list = dc.getActualAttributes(das_data, gcload)

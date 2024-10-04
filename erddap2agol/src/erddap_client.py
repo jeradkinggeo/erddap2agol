@@ -1,5 +1,5 @@
 #ERDDAP stuff is handled here with the ERDDAPHandler class.
-import sys, os, requests
+import sys, os, requests, json
 from datetime import datetime, timedelta
 import pandas as pd
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
@@ -25,6 +25,47 @@ def cleanTemp() -> None:
         if file.endswith(".csv"):
             os.remove(os.path.join(filepath, file))
 
+def getErddapConfDir() -> str:
+    agol_home = os.getenv('AGOL_HOME', '/arcgis/home')
+    base_dir = agol_home
+    erddap_conf_dir = os.path.join(base_dir, 'e2a_erddap_conf')
+    os.makedirs(erddap_conf_dir, exist_ok=True)
+
+    return os.path.join(erddap_conf_dir, 'active_erddaps.json')
+
+def getErddapList() -> None:
+    url = "https://raw.githubusercontent.com/IrishMarineInstitute/awesome-erddap/master/erddaps.json"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        try:
+            data = response.json()
+        except json.JSONDecodeError as e:
+            print(f"Error decoding ERDDAP list from {url}")
+            print(f"Error: {e}")
+            return
+        
+        filepath = getErddapConfDir()
+
+        with open(filepath, 'w') as f:
+            json.dump(data, f, indent=4)
+        
+        return filepath
+    else:
+        print(f"\nFailed to fetch ERDDAP List from {url}.") 
+        print(f"Status code: {response.status_code}")
+        return None
+
+def showErddapList() -> None:
+    filepath = getErddapConfDir()
+    with open(filepath, 'r') as f:
+        data = json.load(f)
+    
+    for index, erddap in enumerate(data, start=1):
+        print(f"{index}. ERDDAP Server: {erddap['name']}")
+
+
+#--------------------------------------------------------------------------------
 class ERDDAPHandler:
     def __init__(self, server, serverInfo, datasetid, attributes, fileType, longitude, latitude, time, start_time, end_time, geoParams):
         self.server = server
@@ -50,20 +91,73 @@ class ERDDAPHandler:
         
         rows = data['table']['rows']
         dataset_id_list = [row[dataset_id_index] for row in rows if row[dataset_id_index] != "allDatasets"]
-
         
         return dataset_id_list
     
     def getDas(self, datasetid: str) -> str:
         dataset_id_list = self.getDatasetIDList()
         if datasetid not in dataset_id_list:
-            print(f"Dataset ID {datasetid} not found in the list of available datasets.")
+            print(f"\nDataset ID {datasetid} not found in the list of available datasets.")
             return None
         else:
             url = f"{self.server}{datasetid}.das"
             response = requests.get(url)
             return response.text
+        
+    def setErddap(self, erddapIndex: int) -> None:
+        filepath = getErddapConfDir()
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+        
+        if erddapIndex > len(data) or erddapIndex < 1:
+            print(f"Please select a number between 1 and {len(data)}.")
+            return None
+        else:
+            erddap_dict = data[erddapIndex - 1]
+            print(f"\nSelected ERDDAP Server: {erddap_dict['name']}")
 
+            server_obj = custom_server
+            baseurl = erddap_dict['url']
+
+            if baseurl.endswith("/index.html"):
+                baseurl = baseurl[:-10]
+
+                try:
+                    serv_check = requests.get(baseurl)
+                    serv_check.raise_for_status()
+
+                
+                    server_url = baseurl + "/tabledap/"
+                    setattr(server_obj, 'server', server_url)
+
+                    server_info_url = baseurl + "/info/index.json"
+                    setattr(server_obj, 'serverInfo', server_info_url)
+
+                    return server_obj
+                
+                except requests.exceptions.HTTPError as http_err:
+                    print(f"HTTP error {http_err} occurred when connecting to {baseurl}")
+                    return None
+
+            else:
+
+                try:
+                    serv_check = requests.get(baseurl)
+                    serv_check.raise_for_status()
+
+                    server_url = erddap_dict['url'] + "/tabledap/"
+                    setattr(server_obj, 'server', server_url)
+
+                    server_info_url = erddap_dict['url'] + "/info/index.json"
+                    setattr(server_obj, 'serverInfo', server_info_url)
+
+                    return server_obj
+                except requests.exceptions.HTTPError as http_err:
+                    print(f"HTTP error {http_err} occurred when connecting to {baseurl}")
+                    return None
+
+            
+    
 
     # Generates URL for ERDDAP request based on class object attributes
 
