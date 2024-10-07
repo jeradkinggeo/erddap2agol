@@ -59,7 +59,7 @@ def NRTFindAGOL() -> list:
     return nrt_dict
 
 #Hardcoded for NRT test 10/7/2024
-def NRTUpdateAGOL(Server_Selection: ec.ERDDAPHandler) -> None:
+def NRTUpdateAGOL() -> None:
     gcload = ec.erddapGcoos    
 
     nrt_dict  = NRTFindAGOL()
