@@ -389,6 +389,7 @@ def nrt_creation_test():
 # come back to this
 def custom_server_menu():
     print("Server Selection")
+    ec.getErddapList()
     ec.showErddapList()
     uc = input("\nSelect an ERDDAP server to use: ")
     print("Type back to go back")
