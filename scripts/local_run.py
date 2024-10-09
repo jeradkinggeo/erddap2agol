@@ -13,15 +13,6 @@ from erddap2agol.src import ago_wrapper as aw
 from erddap2agol.logs import updatelog as ul 
 
 def main():
-    # ec.showErddapList()
-    # uc = input("\nSelect an ERDDAP server to use: ")
-
-    # gcload = ec.ERDDAPHandler.setErddap(ec.custom_server, int(uc))
-    # aw.createFolder(gcload)
-
-        
-    
-
     run.cui()
 
 if __name__ == "__main__":

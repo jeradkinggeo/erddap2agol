@@ -96,12 +96,18 @@ def getTimeFromJson(datasetid):
     with open(filepath, 'r') as json_file:
         data = json.load(json_file)
     
-    time_str = data['time']['actual_range']['value']
-    start_time_str, end_time_str = time_str.split(', ')
-    start_time = int(float(start_time_str))
-    end_time = int(float(end_time_str))
+    try:
+        time_str = data['time']['actual_range']['value']
+        start_time_str, end_time_str = time_str.split(', ')
+        start_time = int(float(start_time_str))
+        end_time = int(float(end_time_str))
+        return start_time, end_time
+    except Exception as e:
+        print(f"Error getting time from JSON: {e}")
+        return None
+
     
-    return start_time, end_time
+    
     
 def convertFromUnix(time):
     start = datetime.datetime.utcfromtimestamp(time[0]).strftime('%Y-%m-%dT%H:%M:%S') 
