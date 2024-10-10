@@ -158,51 +158,57 @@ class ERDDAPHandler:
                     return None
 
             
-    
-
     # Generates URL for ERDDAP request based on class object attributes
-
     def generate_url(self, isSeed: bool, additionalAttr: list = None) -> str:
-        
+        # Initialize the attribute list
+        attrs = []
+
+        # If 'depth' is in additionalAttr, remove it and place it first
+        if additionalAttr and 'depth' in additionalAttr:
+            additionalAttr.remove('depth')
+            attrs.append('depth')
+
+        # Then add 'longitude' and 'latitude'
+        attrs.extend([self.longitude, self.latitude])
+
+        # Then add the rest of additionalAttr
+        if additionalAttr:
+            attrs.extend(additionalAttr)
+
+        # Finally, add 'time'
+        attrs.append(self.time)
+
+        # Join the attributes into the URL
+        attrs_str = '%2C'.join(attrs)
+
+        # Construct time constraints
         if isSeed:
             if isinstance(self.start_time, str):
                 self.start_time = datetime.strptime(self.start_time, '%Y-%m-%dT%H:%M:%S')
-                endtime_seed = self.start_time + timedelta(days=3)
-                endtime_seed_str = endtime_seed.strftime('%Y-%m-%dT%H:%M:%S')
-                start_time_str = self.start_time.strftime('%Y-%m-%dT%H:%M:%S')
-
-            url = (
-                f"{self.server}{self.datasetid}.csvp?"
-                f"{self.longitude}%2C{self.latitude}"
+            endtime_seed = self.start_time + timedelta(days=3)
+            endtime_seed_str = endtime_seed.strftime('%Y-%m-%dT%H:%M:%S')
+            start_time_str = self.start_time.strftime('%Y-%m-%dT%H:%M:%S')
+            time_constraints = (
+                f"&{self.time}%3E%3D{start_time_str}Z"
+                f"&{self.time}%3C%3D{endtime_seed_str}Z"
             )
-
-            if additionalAttr:
-                additional_attrs_str = "%2C".join(additionalAttr)
-                url += f"%2C{additional_attrs_str}"
-
-            url += (
-                f"%2C{self.time}"
-                f"&time%3E%3D{start_time_str}Z&time%3C%3D{endtime_seed_str}Z&orderBy(%22time%22)"
-            )
-
-            print(f"Seed URL: {url}",
-                f"Start Time: {start_time_str}",
-                f"End Time: {endtime_seed_str}")
+            print(f"Start Time: {start_time_str}", f"End Time: {endtime_seed_str}")
         else:
-            url = (
-                f"{self.server}{self.datasetid}.csvp?"
-                f"{self.longitude}%2C{self.latitude}"
+            time_constraints = (
+                f"&{self.time}%3E%3D{self.start_time}Z"
+                f"&{self.time}%3C%3D{self.end_time}Z"
             )
 
-            if additionalAttr:
-                additional_attrs_str = "%2C".join(additionalAttr)
-                url += f"%2C{additional_attrs_str}"
+        # Construct the full URL
+        url = (
+            f"{self.server}{self.datasetid}.csvp?"
+            f"{attrs_str}"
+            f"{time_constraints}&orderBy(%22{self.time}%22)"
+        )
 
-            url += (
-                f"%2C{self.time}"
-                f"&time%3E%3D{self.start_time}Z&time%3C%3D{self.end_time}Z&orderBy(%22time%22)"
-            )
-
+        if isSeed:
+            print(f"Seed URL: {url}")
+        else:
             print(f"\nGenerated URL: {url}")
 
         return url

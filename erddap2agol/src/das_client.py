@@ -42,13 +42,10 @@ def parseDasResponse(response_text):
 def getConfDir():
 
     agol_home = os.getenv('AGOL_HOME', '/arcgis/home')
-    #print(f"AGOL_HOME is set to: {agol_home}")
 
     base_dir = agol_home
-    #print(f"Base directory is: {base_dir}")
 
-    das_conf_dir = os.path.join(base_dir, 'das_conf')
-    #print(f"DAS configuration directory is: {das_conf_dir}")
+    das_conf_dir = os.path.join(base_dir, 'e2a_das_conf')
 
     os.makedirs(das_conf_dir, exist_ok=True)
     return das_conf_dir
@@ -105,9 +102,16 @@ def getTimeFromJson(datasetid):
     except Exception as e:
         print(f"Error getting time from JSON: {e}")
         return None
-
     
-    
+# This function doesn't go anywhere yet
+# should be used to check for core attributes (lat lon time) in the dataset
+def checkDataValidity(dasJson) -> bool:
+    for key, value in dasJson.items():
+        if isinstance(value, dict):
+            if {"latitude", "longitude", "time"} not in key:
+                return False
+            else:
+                return True
     
 def convertFromUnix(time):
     start = datetime.datetime.utcfromtimestamp(time[0]).strftime('%Y-%m-%dT%H:%M:%S') 
@@ -120,25 +124,17 @@ def convertFromUnixDT(time_tuple):
     end_datetime = datetime.datetime.utcfromtimestamp(end_unix)
     return start_datetime, end_datetime
 
-# This function doesn't go anywhere yet but we will need to include this in initial read functions
-def checkDataValidity(dasJson) -> bool:
-    for key, value in dasJson.items():
-        if isinstance(value, dict):
-            if {"latitude", "longitude", "time"} not in key:
-                return False
-            else:
-                return True
+
     
-
-
-#Expand this function to check the values of potential attributes 
+#Expand this function to check the dtype of attributes 
 def getActualAttributes(dasJson, erddapObject: ec.ERDDAPHandler) -> list:
     attributes_set = set() 
     for key, value in dasJson.items():
         if isinstance(value, dict):
             #added depth to the list of keys to ignore, revisit this later
             #added it back without changing anything hope nothing breaks :3
-            if "actual_range" in value and "_qc_" not in key and key not in {"latitude", "longitude", "time", "depth"}:
+            # it broke
+            if "actual_range" in value and "_qc_" not in key and key not in {"latitude", "longitude", "time"}:
                 if "coverage_content_type" in value and value["coverage_content_type"].get("value") == "qualityInformation":
                     continue
                 attributes_set.add(key)

@@ -42,11 +42,11 @@ def create_erddap_item_menu():
 
     if core.checkInputForList(datasetid):
         dataset_list = core.inputToList(datasetid)
-        core.processListInput(dataset_list, gcload)
+        core.processListInput(dataset_list, gcload, 0)
     else:
         attribute_list = core.parseDas(gcload, datasetid)
         if attribute_list:
-            core.agolPublish(gcload, attribute_list)
+            core.agolPublish(gcload, attribute_list, 0)
 
     print("\nReturning to main menu...")
     cui()
@@ -352,172 +352,7 @@ def nrt_creation():
 #         ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time())
         
 #     ul.cleanTemp()
-
-# def nrt_creation_test():
-#     print("\nNRT Creation Test")
-
-#     print("Select which option you would like")
-#     print("1. Create NRT item with dataset ID")
-#     print("2. Find valid NRT datasets in a server and add to AGOL")
-#     print("3. Back")
-
-#     user_choice = input(": ")
-
-#     if user_choice == "1":
-#         print("\nSelect the server of the dataset you want to create an AGOL item for.")
-#         print("1. GCOOS")
-#         print("2. Coastwatch")
-#         print("3. back")
-
-#         user_choice = input(": ")
-
-#         if user_choice == "1":
-#             gcload = ec.erddapGcoos
-#         elif user_choice == "2":
-#             gcload = ec.coastwatch 
-#         elif user_choice == "3":
-#             cui()
-        
-#         print("Enter the datasetid for the dataset you want to create an AGOL item for.")
-#         print("2. back")
-#         user_choice = input(": ")
-
-#         if user_choice == "2":
-#             create_erddap_item_menu()
-#         else: 
-#             datasetid = user_choice
-
-
-#         das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
-#         if das_resp is None:
-#             print(f"No data found for dataset {datasetid}.")
-#             print("The dataset may not exist or the data may not be available.")
-#             print("Returning to main menu...")
-#             cui()
-#         parsed_response = dc.parseDasResponse(das_resp)
-#         parsed_response = dc.convertToDict(parsed_response)
-#         fp = dc.saveToJson(parsed_response, datasetid)
-#         print(f"\nJSON file saved to {fp}")   
-
-
-#         das_data = dc.openDasJson(datasetid)
-
-#         attribute_list = dc.getActualAttributes(das_data, gcload)
-
-#         # Now we're going to generate the moving window
-#         window_start, window_end = lm.movingWindow(isStr=True)
-
-
-#         overlapBool = lm.checkDataRange(datasetid)
-
-        
-
-#         if overlapBool == True:
-#             print(f"Data for {datasetid} overlaps with the moving window. Updating...")
-#         else:
-#             print(f"Data for {datasetid} does not have records within the last 7 days. Skipping...")
-#             cui()
-
-        
-
-#         setattr(gcload, "start_time", window_start)
-#         setattr(gcload, "end_time", window_end)
-#         setattr(gcload, "datasetid", datasetid)
-
-#         timeintv = ec.ERDDAPHandler.calculateTimeRange(gcload)
-
-#         dc.displayAttributes(timeintv, attribute_list)
-
-#         full_url = gcload.generate_url(False, attribute_list)
-#         response = ec.ERDDAPHandler.return_response(full_url)
-#         filepath = ec.ERDDAPHandler.responseToCsv(gcload, response)
-
-#         gis = aw.agoConnect()
-#         propertyDict = aw.makeItemProperties(gcload)
-#         publish_params = gcload.geoParams
-
-#         table_id = aw.publishTable(propertyDict, publish_params, filepath)
-#         seed_url = "None"
-#         ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time(), 1)
-
-#     elif user_choice == "2":
-               
-#         print("\nSelect the server you want to create an NRT collection for.")
-#         print("1. GCOOS")
-#         print("2. Coastwatch")
-#         print("3. back")
-
-#         user_choice = input(": ")
-
-#         if user_choice == "1":
-#             gcload = ec.erddapGcoos
-#         elif user_choice == "2":
-#             gcload = ec.coastwatch 
-#         elif user_choice == "3":
-#             cui()
-
-#         print("Finding valid NRT datasets...")
-#         NRT_IDs = lm.batchNRTFind(gcload)
-        
-#         window_start, window_end = lm.movingWindow(isStr=True)
-
-#         for datasetid in NRT_IDs:
-#             print(f"\n{datasetid} is being processed...")      
-
-#             das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
-#             parsed_response = dc.parseDasResponse(das_resp)
-#             parsed_response = dc.convertToDict(parsed_response)
-#             dc.saveToJson(parsed_response, datasetid)
-
-#             attribute_list = dc.getActualAttributes(dc.openDasJson(datasetid), gcload)
-
-#             setattr(gcload, "start_time", window_start)
-#             setattr(gcload, "end_time", window_end)
-#             setattr(gcload, "datasetid", datasetid)
-#             setattr(gcload, "attributes", attribute_list)
-
-#             full_url = gcload.generate_url(False, attribute_list)
-
-#             #print(f"\nFull URL: {full_url}")
-
-#             response = ec.ERDDAPHandler.return_response(full_url)
-#             filepath = ec.ERDDAPHandler.responseToCsv(gcload, response)
-
-#             aw.agoConnect()
-
-#             propertyDict = aw.makeItemProperties(gcload)
-#             publish_params = gcload.geoParams
-
-#             table_id = aw.publishTable(propertyDict, publish_params, filepath)
-#             seed_url = "None"
-
-#             ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time(), 1)
-
-# def custom_server_menu():
-#     print("Server Selection")
-#     ec.getErddapList()
-#     ec.showErddapList()
-#     uc = input("\nSelect an ERDDAP server to use: ")
-#     gcload = ec.ERDDAPHandler.setErddap(ec.custom_server, int(uc))
-#     print(f"\nSelected server: {gcload.server}")
-#     uc= input("Proceed with server selection? (y/n): ")
-
-#     if uc == "y":
-#         print("Continuing with selected server...")
-#     elif uc == "n":
-#         print("Returning to main menu...")
-#         cui()
-#     else:
-#         print("That was not one of the two options. Returning to main menu...")
-#         cui()
-    
-
-
-
-
-
-
-    
+ 
 
 
 def exit_program():

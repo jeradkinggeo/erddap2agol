@@ -58,9 +58,6 @@ def NRTFindAGOL() -> list:
     nrt_dict  = ul.updateCallFromNRT(1)
     return nrt_dict
 
-
-
-        
         
 
     
