@@ -13,9 +13,9 @@ The ERDDAP2AGOL tool is under active development, and is not ready to be deploye
 
 ## What to expect
 * Your ERDDAP data will be available in three product levels.         
-- NRT: 7 day moving window. (L1)
-- Historical: Updated weekly, contains all data. (L2)
-- QC Historical: QC Flags, low quality records removed. (L3) <br />
+- NRT: 7 day moving window, Level 1. (Version 0.4)
+- Historical: Updated weekly, contains all data, Level 2. (Version 0.5) 
+- QC Historical: QC Flags, low quality records removed, Level 3. (Version 0.6) <br />
 
 * Multiple install options.
 - Install directly from an AGOL notebook.
