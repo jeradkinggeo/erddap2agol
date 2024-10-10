@@ -58,31 +58,7 @@ def NRTFindAGOL() -> list:
     nrt_dict  = ul.updateCallFromNRT(1)
     return nrt_dict
 
-#Hardcoded for NRT test 10/7/2024
-def NRTUpdateAGOL() -> None:
-    gcload = ec.erddapGcoos    
 
-    nrt_dict  = NRTFindAGOL()
-
-    for datasetid, itemid in nrt_dict.items():
-        startWindow, endWindow = movingWindow(isStr=True)
-        das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
-        parsed_response = dc.convertToDict(dc.parseDasResponse(das_resp))
-        fp = dc.saveToJson(parsed_response, datasetid)
-        das_data = dc.openDasJson(datasetid)
-        attribute_list = dc.getActualAttributes(das_data, gcload)
-
-        setattr(gcload, "start_time", startWindow)
-        setattr(gcload, "end_time", endWindow)
-        setattr(gcload, "datasetid", datasetid)
-
-        url = gcload.generate_url(False, attribute_list)
-
-
-        gis = aw.agoConnect()
-        
-        content = gis.content.get(itemid)
-        OverwriteFS.overwriteFeatureService(content, url, ignoreAge = True)
 
         
         

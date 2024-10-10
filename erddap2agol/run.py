@@ -1,13 +1,7 @@
 from .src import erddap_client as ec
-from .src import das_client as dc
-from .src import ago_wrapper as aw
 from .src import level_manager as lm
-from .tests import test_params as tp
-from .logs import updatelog as ul
-from .src.utils import OverwriteFS
-
+from .src import core
 from arcgis.gis import GIS
-import time
 
 #-----------------ERDDAP2AGOL CUI-----------------
 # This will be eventually cleaned up
@@ -32,76 +26,30 @@ def create_erddap_item_menu():
     print("\nCreate ERDDAP Item")
     print("Select the server of the dataset you want to create an AGOL item for.")
 
-    # This is the new flow for server selection
-    ec.getErddapList()
-    ec.showErddapList()
-    uc = input("\nSelect an ERDDAP server to use: ")
-    gcload = ec.ERDDAPHandler.setErddap(ec.custom_server, int(uc))
-    print(f"\nSelected server: {gcload.server}")
-    uc= input("Proceed with server selection? (y/n): ")
-
-    if uc == "y":
-        print("\nContinuing with selected server...")
-    elif uc == "n":
-        print("\nReturning to main menu...")
+    gcload = core.erddapSelection()
+    if not gcload:
         cui()
-    #--------------------------------------------------
-    print("Enter the datasetid for the dataset you want to create an AGOL item for.")
+        return
+
+    print("Enter the datasetid(s) for the dataset you want to create an AGOL item for.")
+    print("Separate multiple dataset IDs with commas (e.g., dataset1, dataset2).")
     print("2. back")
     datasetid = input(": ")
 
     if datasetid == "2":
         cui()
+        return
+
+    if core.checkInputForList(datasetid):
+        dataset_list = core.inputToList(datasetid)
+        core.processListInput(dataset_list, gcload)
     else:
-        datasetid = datasetid
+        attribute_list = core.parseDas(gcload, datasetid)
+        if attribute_list:
+            core.agolPublish(gcload, attribute_list)
 
-    das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
-    if das_resp is None:
-        print(f"\nNo data found for dataset {datasetid}.")
-        print("The dataset may not exist or the data may not be available.")
-        print("Returning to main menu...")
-        cui()
-
-    parsed_response = dc.convertToDict(dc.parseDasResponse(das_resp))
-    fp = dc.saveToJson(parsed_response, datasetid)
-    print(f"\nJSON file saved to {fp}")
-
-    # Getting attributes and time from DAS
-    das_data = dc.openDasJson(datasetid)
-    attribute_list = dc.getActualAttributes(das_data, gcload)
-    unixtime = (dc.getTimeFromJson(datasetid))
-    start, end = dc.convertFromUnix(unixtime)
-
-    # Apply class attributes accordingly
-    setattr(gcload, "start_time", start)
-    setattr(gcload, "end_time", end)
-    setattr(gcload, "datasetid", datasetid)
-
-    # Calculate time interval and display attributes for user
-    timeintv = ec.ERDDAPHandler.calculateTimeRange(gcload)
-    dc.displayAttributes(timeintv, attribute_list)
-
-    # Seeding process will stay until clarity on OFS
-    seed_choice = input("Would you like to create a seed file? (y/n): ")
-    if seed_choice.lower() == "y":
-        seedbool = True
-    elif seed_choice.lower() == "n":
-        seedbool = False
-    else:
-        print("Invalid input. Going back.")
-
-    
-    full_url = gcload.generate_url(seedbool, attribute_list)
-    response = ec.ERDDAPHandler.return_response(full_url)
-    filepath = ec.ERDDAPHandler.responseToCsv(gcload, response)
-
-    gis = aw.agoConnect()
-    propertyDict = aw.makeItemProperties(gcload)
-    publish_params = gcload.geoParams
-
-    table_id = aw.publishTable(propertyDict, publish_params, filepath)
-    seed_url = "None"
-    ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time(), 0)
+    print("\nReturning to main menu...")
+    cui()
 
     
 def nrt_creation():
@@ -109,107 +57,46 @@ def nrt_creation():
 
     print("Select which option you would like")
     print("1. Create NRT item with dataset ID(s)")
-    print("2. Find valid NRT datasets in a server and add to AGOL")
+    print("2. Find ALL valid NRT datasets in a server and add to AGOL")
     print("3. Back")
 
     user_choice = input(": ")
 
-    #Start option 1 
+    #Option 1: Create NRT item with dataset ID(s) 
     if user_choice == "1":
         print("Select the server of the dataset you want to create an AGOL item for.")
 
-        # This is the new flow for server selection
-        ec.getErddapList()
-        ec.showErddapList()
-        uc = input("\nSelect an ERDDAP server to use: ")
-        gcload = ec.ERDDAPHandler.setErddap(ec.custom_server, int(uc))
-        print(f"\nSelected server: {gcload.server}")
-        uc= input("Proceed with server selection? (y/n): ")
-
-        if uc == "n":
-            print("\nReturning to main menu...")
+        gcload = core.erddapSelection()
+        if not gcload:
             cui()
+            return 
+
+        print("\nEnter the datasetid(s) for the dataset you want to create an AGOL item(s) for.")
+        print("Separate multiple dataset IDs with commas (e.g.: dataset1, dataset2).")
+        print("2. back")
+        datasetid = input(": ")
+
+        if datasetid == "2":
+            cui()
+            return    
         
             
-        
-        print("Enter the datasetid for the dataset you want to create an AGOL item for.")
-        print("2. back")
-        user_choice = input(": ")
-
-        if user_choice == "2":
-            nrt_creation()
-        else: 
-            datasetid = user_choice
-
-
-        das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
-        if das_resp is None:
-            print(f"No data found for dataset {datasetid}.")
-            print("The dataset may not exist or the data may not be available.")
-            print("Returning to main menu...")
-            cui()
-        parsed_response = dc.parseDasResponse(das_resp)
-        parsed_response = dc.convertToDict(parsed_response)
-        fp = dc.saveToJson(parsed_response, datasetid)
-        print(f"\nJSON file saved to {fp}")   
-
-
-        das_data = dc.openDasJson(datasetid)
-
-        attribute_list = dc.getActualAttributes(das_data, gcload)
-
-        # Now we're going to generate the moving window
-        window_start, window_end = lm.movingWindow(isStr=True)
-
-
-        overlapBool = lm.checkDataRange(datasetid)
-
-        
-
-        if overlapBool == True:
-            print(f"Data for {datasetid} overlaps with the moving window. Updating...")
+        if core.checkInputForList(datasetid):
+            dataset_list = core.inputToList(datasetid)
+            core.processListInput(dataset_list, gcload, 1)
         else:
-            print(f"Data for {datasetid} does not have records within the last 7 days. Skipping...")
-            cui()
+            attribute_list = core.parseDasNRT(gcload, datasetid)
+            if attribute_list:
+                core.agolPublish(gcload, attribute_list, 1)
 
-        
-
-        setattr(gcload, "start_time", window_start)
-        setattr(gcload, "end_time", window_end)
-        setattr(gcload, "datasetid", datasetid)
-
-        timeintv = ec.ERDDAPHandler.calculateTimeRange(gcload)
-
-        dc.displayAttributes(timeintv, attribute_list)
-
-        full_url = gcload.generate_url(False, attribute_list)
-        response = ec.ERDDAPHandler.return_response(full_url)
-        filepath = ec.ERDDAPHandler.responseToCsv(gcload, response)
-
-        gis = aw.agoConnect()
-        propertyDict = aw.makeItemProperties(gcload)
-        publish_params = gcload.geoParams
-
-        table_id = aw.publishTable(propertyDict, publish_params, filepath)
-        seed_url = "None"
-        ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time(), 1)
-    #End option 1
-
-    #Start option 2
+    #Start option 2: Automatically find valid NRT datasets
     elif user_choice == "2":
-        print("\nSelect the server you want to create an NRT collection for.")
+        print("Select the server of the dataset you want to create an AGOL item for.")
 
-        
-        ec.getErddapList()
-        ec.showErddapList()
-        uc = input("\nSelect an ERDDAP server to use: ")
-        gcload = ec.ERDDAPHandler.setErddap(ec.custom_server, int(uc))
-        print(f"\nSelected server: {gcload.server}")
-        uc= input("Proceed with server selection? (y/n): ")
-
-        if uc == "n":
-            print("\nReturning to main menu...")
+        gcload = core.erddapSelection(ec)
+        if not gcload:
             cui()
+            return 
 
         print("Finding valid NRT datasets...")
         NRT_IDs = lm.batchNRTFind(gcload)
@@ -221,45 +108,15 @@ def nrt_creation():
         if uc == "y":
             for datasetid in NRT_IDs:
                 print(f"{datasetid}")
-                time.sleep(2)
+            print("\n Proceed with processing? (y/n)")
+            uc2 = input(": ")
+            if uc2 == "n":
+                cui()
+            else:
+                core.processListInput(NRT_IDs, gcload, 1)
         else:
-            print("\nOkay, Continuing...")
+            core.processListInput(NRT_IDs, gcload, 1)
         
-        window_start, window_end = lm.movingWindow(isStr=True)
-
-        for datasetid in NRT_IDs:
-            print(f"\n{datasetid} is being processed...")      
-
-            das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
-            parsed_response = dc.parseDasResponse(das_resp)
-            parsed_response = dc.convertToDict(parsed_response)
-            dc.saveToJson(parsed_response, datasetid)
-
-            attribute_list = dc.getActualAttributes(dc.openDasJson(datasetid), gcload)
-
-            setattr(gcload, "start_time", window_start)
-            setattr(gcload, "end_time", window_end)
-            setattr(gcload, "datasetid", datasetid)
-            setattr(gcload, "attributes", attribute_list)
-
-            full_url = gcload.generate_url(False, attribute_list)
-
-            #print(f"\nFull URL: {full_url}")
-
-            response = ec.ERDDAPHandler.return_response(full_url)
-            filepath = ec.ERDDAPHandler.responseToCsv(gcload, response)
-
-            aw.agoConnect()
-
-            propertyDict = aw.makeItemProperties(gcload)
-            publish_params = gcload.geoParams
-
-            table_id = aw.publishTable(propertyDict, publish_params, filepath)
-            seed_url = "None"
-
-            ul.updateLog(gcload.datasetid, table_id, seed_url, full_url, gcload.end_time, ul.get_current_time(), 1)
-    #End option 2
-
 
 # def cui():
 #     while True:
