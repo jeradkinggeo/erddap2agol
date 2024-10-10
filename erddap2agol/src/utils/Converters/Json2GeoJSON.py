@@ -1,35 +1,57 @@
-##################################################################
-#    Name: 'Json2GeoJSON.py', OverwriteFS conversion script      #
-#                                                                #
-# Version: 1.0.0, Nov 2021, Initial Release.                     #
-#          1.0.1, Dec 2021, Patch Null Z-value handling.         #
-#          1.0.2, Feb 2022, Patch to correct output Json schema. #
-#                                                                #
-#  Author: Paul Dodd, pdodd@esri.com, Living Atlas Team, Esri    #
-#                                                                #
-# Purpose: Convert JSON data to a GeoJSON feature collection     #
-##################################################################
+################################################################################
+#    Name: 'Json2GeoJSON.py', OverwriteFS conversion script                    #
+#                                                                              #
+# Version: 1.0.0, Nov 2021, Initial Release.                                   #
+#          1.0.1, Dec 2021, Patch Null Z-value handling.                       #
+#          1.0.2, Feb 2022, Patch to correct output Json schema.               #
+#          1.1.0, Jul 2023, Fixed Root Element identification. Json output     #
+#                           format issue. Added initial Field type ident-      #
+#                           ification. Enhanced date field epoch handling by   #
+#                           including 'AsSeconds' flag. Patch 'Length' extract #
+#                           function. Added hard stop on INI config issues.    #
+#                           Added 'publicationElement','dateAsSeconds',        #
+#                           'sampleSize','rowOffset','rowLength','outputExt',  #
+#                           'zAbsolute','zOutput','mField','mIncrement' and    #
+#                           'mOutput' to Properties section. Extended Z manip- #
+#                           ulations to polyline and polygon features. Altered #
+#                           x/y/z/mField Properties to allow assignment from a #
+#                           field, not just set as a default. Altered zOffset  #
+#                           and zFactor to allow field specification. Added    #
+#                           'abs', 'pow', 'root', 'rand' and 'lambda' to field #
+#                           extraction options. Added access to Point ordinate #
+#                           values with 'SHAPE@X/Y/Z/M' and 'ROWID@' element   #
+#                           names for fields. Added 'outputAsTable' Property.  #
+#                           Updated to generate initial INI file if not found, #
+#                           reporting candidates for rootElement picking best. #
+#                                                                              #
+#  Author: Paul Dodd, pdodd@esri.com, Living Atlas Team, Esri                  #
+#                                                                              #
+# Purpose: Convert JSON data to a GeoJSON feature collection                   #
+################################################################################
 
 from Support.datetimeUtils import decodeDatetime
-import datetime, io, json, tempfile, os, platform, sys
+from random import random
+import datetime, io, json, math, os, platform, sys, tempfile
 
 import traceback
 
-__version__ = "1.0.2"   # Reported by OverwriteFS script during processing
+__version__ = "1.1.0"   # Reported by OverwriteFS script during processing
 
 tempFolder = tempfile.gettempdir()
 homeFolder = os.environ.get( "APPDATA", os.environ.get( "USERPROFILE", os.environ.get( "HOMEPATH", tempFolder))) # Set Home location
 indent = 2              # Number of spaces to Indent Json lines
+numericSet = set( "0123456789+-.")
 
 def _saveFeature( feature, details, outputFP, rowNumber, outputRow, verbose=True):
     """Internal function that records Feature to output, controlling field order"""
     fields = details.get( "fields", [])
+    fieldTypes = details.get( "fieldTypes", {}) # From detectType output during sampling
     values = {}
     if not fields:
         # Hydrate fields list if not available and sort
         fields = list(feature[ "properties"].keys())
         fields.sort()
-        fields = [{field: {"fieldName": feature[ "properties"][ field]["name"]}} for field in fields]
+        fields = [{field: {"fieldName": feature[ "properties"][ field]["name"], "fieldType": fieldTypes.get( field, "")}} for field in fields]
         for field in fields:
             if "type" in field:
                 # Do Not Save Feature Collection Field 'type' element
@@ -50,11 +72,19 @@ def _saveFeature( feature, details, outputFP, rowNumber, outputRow, verbose=True
     xField = details.get( "xField")
     yField = details.get( "yField")
     zField = details.get( "zField")
+    mField = details.get( "mField")
+    mIncrement = details.get( "mIncrement")
+    mOutput = details.get( "mOutput")
     zOffset = details.get( "zOffset")
     zFactor = details.get( "zFactor")
+    zAbsolute = details.get( "zAbsolute")
+    zOutput = details.get( "zOutput")
     allowNulls = details.get( "allowNulls")
-    coordinates = [0,0] if not zField else [0,0,0] # Longitude, Latitude, Elevation
-    coordinateIndex = {field.lower(): index for field, index in [[xField, 0], [yField, 1], [zField, 2]] if field}
+    asTable = details.get( "outputAsTable")
+    coordinates = [0] * (4 if mField else 3 if zField else 2) # Default Geometry as Longitude, Latitude, Elevation, Measure
+    coordinateIndex = {field.lower(): index for field, index in [[xField, 0], [yField, 1], [zField, 2], [mField, 3]] if field}
+    shapeValue = ["SHAPE@X", "SHAPE@Y", "SHAPE@Z", "SHAPE@M"]
+    fieldGeom = False
 
     # Define Extraction Functions
     def extractStart( value, setting, default):
@@ -69,22 +99,32 @@ def _saveFeature( feature, details, outputFP, rowNumber, outputRow, verbose=True
             raise Exception( "cannot find End value '{}".format( setting))
         return value[:length]
 
-    def getNumber( value):
+    def extractRoot( value, setting, default):
+        if setting:
+            return pow( value, 1.0 / setting)
+        return default
+
+    def getNumber( value, default=0.0):
         try:
             return float( value)
         except:
-            return 0.0
+            return default
 
     extractFunctions = {
         "extractOffset": lambda value, setting, default: str( value)[ int(setting):],
-        "extractLength": lambda value, setting, default: str( value)[ int(setting)],
-        "extractStart": extractStart,
-        "extractEnd": extractEnd,
+        "extractLength": lambda value, setting, default: str( value)[ :int(setting)],
+        "extractStart": lambda value, setting, default: extractStart( str( value), str( setting), str(default)),
+        "extractEnd": lambda value, setting, default: extractEnd( str( value), str( setting), str(default)),
         "extractConcat": lambda value, setting, default: "{}{}".format( value, setting),
         "extractAdd": lambda value, setting, default: str( getNumber( value) + getNumber(setting)),
         "extractSub": lambda value, setting, default: str( getNumber( value) - getNumber(setting)),
         "extractMult":lambda value, setting, default: str( getNumber( value) * getNumber(setting)),
-        "extractDiv": lambda value, setting, default: str( getNumber( value) / getNumber(setting))
+        "extractDiv": lambda value, setting, default: str( getNumber( value) / getNumber(setting)),
+        "extractAbs": lambda value, setting, default: str( abs( getNumber( value))),
+        "extractPow": lambda value, setting, default: str( pow( getNumber( value), getNumber( setting))),
+        "extractRoot": lambda value, setting, default: str( extractRoot( getNumber( value), getNumber( setting), default)),
+        "extractRand": lambda value, setting, default: str( getNumber( value) * random()),
+        "extractLambda": lambda value, setting, default: str( eval( setting))
     }
 
     minorWords = set(['and', 'as', 'but', 'for', 'if', 'nor', 'or', 'so,', 'yet', 'a', 'an', 'the', 'at', 'by', 'in', 'of', 'off', 'on', 'per', 'to', 'up', 'via'])
@@ -119,7 +159,20 @@ def _saveFeature( feature, details, outputFP, rowNumber, outputRow, verbose=True
         "Acronym": lambda value: "".join( [word[0:1] for word in str( value).split()])
     }
 
+    # Load Values with Point Shape proprties
+    for name, value in feature[ "geometry"].items(): #list(feature[ "properties"].items()):
+        if name.lower() == "point" and value:
+            coordinates = [0.0] * (4 if mField else 3 if zField else len( value))
+            for index, ordinate in enumerate( value):
+                values[ shapeValue[ index]] = ordinate  # Save 'SHAPE@' value
+                coordinates[ index] = ordinate          # Set Coordiantes
+            break
+
+    # Set Row Id
+    values[ "ROWID@"] = rowNumber
+
     # Output fields by order, substitute alternate name
+    needFieldTerminator = False  # Flag used to check if last field written to output needs a line Termination before next field output
     for index, field in enumerate( fields):
         name = list(field.keys())[0]
         field = field[ name]
@@ -128,6 +181,7 @@ def _saveFeature( feature, details, outputFP, rowNumber, outputRow, verbose=True
         fieldWidth = field.get( "fieldWidth", 0)
         fieldType = field.get( "fieldType", "").lower()
         fieldCase = caseFunctions.get( field.get( "fieldCase"))
+        fieldAsSeconds = field.get( "asseconds", details.get( "dateAsSeconds"))
         extraction = field.get( "extraction", [])
 
         featureDetails = feature[ "properties"].get( name, {})
@@ -142,7 +196,7 @@ def _saveFeature( feature, details, outputFP, rowNumber, outputRow, verbose=True
         fieldDefault = values.get( str( fieldDefault), fieldDefault)
 
         # init Value as existing fieldValue if colName matches fieldName in lookup
-        value = featureDetails.get( "value", values.get( fieldName, fieldDefault))
+        value = featureDetails.get( "value", values.get( fieldName, values.get( name, fieldDefault)))
 
         if hasattr( value, "encode"):
             #value = str(value.encode( "unicode_escape")).strip( "b'\"").replace( r"\\u", r"\u").replace( r'\\"', r'\"').replace( r"\\n", "\n").replace( r"\\t", "\t").replace( r"\\x", r"\u00")
@@ -168,7 +222,7 @@ def _saveFeature( feature, details, outputFP, rowNumber, outputRow, verbose=True
         if fieldType == "date":
             if value and not value == fieldDefault:
                 try:
-                    value = str( decodeDatetime( value, verbose=False).replace( microsecond=0))
+                    value = str( decodeDatetime( value, verbose=False, asMicroseconds=(not fieldAsSeconds)).replace( microsecond=0))
 
                 except Exception as e:
                     if verbose:
@@ -193,13 +247,33 @@ def _saveFeature( feature, details, outputFP, rowNumber, outputRow, verbose=True
 
         elif fieldType in ["integer", "float"]:
             try:
-                value = float( value if value else allowedTypes.get( fieldType))
+                l = 0
+                for c in value:
+                    # Limit characters to numeric set!
+                    if c not in numericSet:
+                        break
+                    l += 1
+                value = float( value[:l] if value else allowedTypes.get( fieldType))
                 if fieldType == "integer":
                     value = int( value)
 
-                if fieldName.lower() in coordinateIndex:
+                lowerName = fieldName.lower()
+                if lowerName in coordinateIndex:
                     # Save Coordinates for when no Geometry
                     coordinates[ coordinateIndex[ fieldName.lower()]] = value
+                    fieldGeom = True
+
+                if lowerName == str( zFactor).lower():
+                    # Set zFactor based on field value
+                    zFactor = value
+
+                if lowerName == str( zOffset).lower():
+                    # Set zOffset based on field value
+                    zOffset = value
+
+                if lowerName == str( mIncrement).lower():
+                    # Set mIncrement based on field value
+                    mIncrement = value
 
             except Exception as e:
                 if verbose:
@@ -214,7 +288,10 @@ def _saveFeature( feature, details, outputFP, rowNumber, outputRow, verbose=True
                 if verbose:
                     print( " * Conversion: Cannot save Field '{0}' (element '{1}'), field with name '{0}' already processed, output ignored!".format( fieldName, name))
             else:
-                outputFP.write( (' ' * (4 * indent)) + '"{}": {}{}\n'.format( fieldName, json.dumps( None if saveAsNull else value), "," if index < len( fields) -1 else ""))
+                if needFieldTerminator:
+                    outputFP.write( ",\n")
+                outputFP.write( (' ' * (4 * indent)) + '"{}": {}'.format( fieldName, json.dumps( None if saveAsNull else value)))
+                needFieldTerminator = True
 
         if not (name in feature[ "properties"] or name in values):
             # Report missing field in data that was specified in config, Field no longer available?
@@ -229,41 +306,83 @@ def _saveFeature( feature, details, outputFP, rowNumber, outputRow, verbose=True
         if fieldName not in values:
             values[ fieldName] = value
 
+    if needFieldTerminator:
+        outputFP.write( '\n')
+
     outputFP.write( (' ' * (3 * indent)) + '},\n')
 
-    fieldGeom = 0
-    # Check for Geometry or New fields
-    for name, value in feature[ "geometry"].items(): #list(feature[ "properties"].items()):
-        lowerName = name.lower()
-        if lowerName in ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"]:
-            geometry = []   # Setup working geometry Array, set as a Multi-part geometry, 'value' remains as the official geometry object and is the output!
-            if lowerName == "point":
-                if not value:
-                    # No valid Geometry Coordinates, add
+    # Align geometry type punctuation to Online expectations. Processing errors may be encounered otherwise!
+    properType = {
+        "point": "Point",
+        "linestring": "LineString",
+        "polygon": "Polygon",
+        "multipoint": "MultiPoint",
+        "multilinestring": "MultiLineString",
+        "multipolygon": "MultiPolygon"
+    }
+
+    if not asTable:
+        # Check for Geometry or New fields
+        for name, value in feature[ "geometry"].items(): #list(feature[ "properties"].items()):
+            lowerName = name.lower()
+            if lowerName in properType:
+                name = properType[ lowerName]
+                geometry = []   # Setup working geometry Array, set as a Multi-part geometry, 'value' remains as the official geometry object and is the output!
+                if lowerName == "point":
+                    if not value:
+                        # No valid Geometry Coordinates, add
+                        fieldGeom = True
+                    # Use Geometry Coordinates when no geometery available, derived from original if available
                     value = coordinates[:]
-                    fieldGeom = 1
-                geometry.append( [[value]])   # Add a Coordinate to a Ring to a Part to a Multi-part geometry
+                    geometry.append( [[value]])   # Add a Coordinate set to a Ring to a Part to a Multi-part geometry
 
-            elif lowerName == "multipoint":
-                geometry.append( [value])     # Add a Ring (containing coordinates) to a Part to a Multi-part geometry
+                elif lowerName in ["multipoint", "linestring"]:
+                    geometry.append( [value])     # Add a Ring (containing sets of coordinates) to a Part to a Multi-part geometry
 
-            # Process Z updates if needed
-            if geometry and (zField or zOffset or zFactor-1):
-                # Need to Add or Alter Z details
-                for part in geometry:
-                    for ring in part:
-                        for coord in ring:
-                            if len( coord) < 3 and zField:
-                                coord.append( coordinates[-1])
-                            if len( coord) == 3:
-                                if coord[-1] is not None:
-                                    coord[-1] *= zFactor
-                                    coord[-1] += zOffset
+                elif lowerName in ["multilinestring", "polygon"]:
+                    geometry.append( value)     # Add a Part (containing a Ring, containing sets of coordinates) to a Multi-part geometry
 
-            outputFP.write( (' ' * (3 * indent)) + '"geometry": {\n')
-            outputFP.write( (' ' * (4 * indent)) + '"type": "' + name + '",\n')
-            outputFP.write( (' ' * (4 * indent)) + '"coordinates": ' + json.dumps( value) + '\n')
-            outputFP.write( (' ' * (3 * indent)) + '}\n')
+                elif lowerName in ["multipolygon"]:
+                    geometry = value              # Use as a Multi-part geometry
+
+                # Process Z and M updates if needed
+                if geometry:
+                    # Need to Add or Alter Z and M details
+                    for part in geometry:
+                        for ring in part:
+                            for coord in ring:
+                                if len( coord) < len( coordinates):
+                                    # Extend ordinates if missing (add Z and M)
+                                    coord += coordinates[ len( coord) - len( coordinates):]
+                                if not mOutput and len(coord) == 4:
+                                    # Strip output M (measure) ordinate
+                                    del coord[3]
+                                if not zOutput:
+                                    # Strip output Z ordinate
+                                    if len(coord) == 3:
+                                        del coord[2]
+                                    elif len(coord) == 4:
+                                        # Keep Measure and Null Z
+                                        coord[2] = None
+                                else:
+                                    if len( coord) >= 3:
+                                        if coord[2] is not None:
+                                            if zAbsolute:
+                                                coord[2] = abs( coord[2])
+                                            coord[2] *= zFactor
+                                            coord[2] += zOffset
+                                if len( coordinates) == 4:
+                                    # Increment Measure
+                                    coordinates[3] += mIncrement
+
+                outputFP.write( (' ' * (3 * indent)) + '"geometry": {\n')
+                outputFP.write( (' ' * (4 * indent)) + '"type": "' + name + '",\n')
+                outputFP.write( (' ' * (4 * indent)) + '"coordinates": ' + json.dumps( value) + '\n')
+                outputFP.write( (' ' * (3 * indent)) + '}\n')
+
+    else:
+        # Output a NULL Geometry, signifying a Table that has no geometry or shape attribute
+        outputFP.write( (' ' * (3 * indent)) + '"geometry": ' + json.dumps( None) + '\n')
 
         # See: https://en.wikipedia.org/wiki/GeoJSON
         # Single types: Point, LineString, Polygon
@@ -275,7 +394,7 @@ def _saveFeature( feature, details, outputFP, rowNumber, outputRow, verbose=True
     # Wrap up Feature output
     outputFP.write( (' ' * (2 * indent)) + '}') # Leave off camma for next feature write operation!
 
-    # Return 0 or 1 if Field Defined Geometry was used
+    # Return 0 (False) or 1 (True) if Field Defined Geometry was used
     return fieldGeom
 
 # Field property options
@@ -289,13 +408,20 @@ extractProperties = {
     "add": "extractAdd",            # Add two values
     "sub": "extractSub",            # Substract two values
     "mult": "extractMult",          # Multiply two values
-    "div": "extractDiv"             # Divide two values
+    "div": "extractDiv",            # Divide two values
+    "abs": "extractAbs",            # Absolute value
+    "pow": "extractPow",            # Value raised to the Power of another value
+    "root": "extractRoot",          # Value raised to the Power of 1 over another value (Inverse Power)
+    "rand": "extractRand",          # Value multiplied by Random number between 0 and 1
+    "lambda": "extractLambda"       # Custom Lambda function
 }
-intProperties = {"offset", "length", "width"}
-floatProperties = {"zFactor", "zOffset"}
+intProperties = {"offset", "length", "width", "sampleSize", "rowOffset", "rowLength"}
+floatProperties = {"zFactor", "zOffset", "mIncrement"}
+noProperties = {"abs", "rand"}
 optionSwitchProperties = {
     "donotsave": "DoNotSave",
-    "allownulls": "AllowNulls"
+    "allownulls": "AllowNulls",
+    "asseconds": "AsSeconds"
 }
 optionalProperties = {                                      # Optional properties must include key/value pair
     "width": "fieldWidth",          # Width of Field (text only)
@@ -310,23 +436,38 @@ allowedCases = set(["Upper", "Lower", "Capital", "AllCapital", "Title", "Camel",
 def _readINI( iniFile, verbose=True):
     details = {
         "lastPublicationDate": None,
+        "dateAsSeconds": False,
+        "publicationElement": "",
         "rootElement": "",
         "flattenData": True,
         "flattenNames": True,
         "exclusions": set(),
         "trimOuterSpaces": True,
         "allowNulls": True,
+        "sampleSize": 150,      # Number of Rows to parse to determine field data types for before starting output.
+        "rowOffset": 0,
+        "rowLength": 0,
+        "outputExt": None if os.path.exists( iniFile) else "geojson",   # Default to 'geojson' for first run, otherwise 'json' for existing see convert function
+        "outputAsTable": False, # True or False (default), to store as a table
         "xField": "",
         "yField": "",
         "zField": "",
+        "mField": "",
+        "mIncrement": 0,        # Number value to add to Measurement ordinate prior to output
+        "mOutput": True,        # True (default) or False, to store M (measure) ordinate on output
         "zFactor": 1,
         "zOffset": 0,
+        "zAbsolute": False,     # Take Absolute Value of Z Ordinate before adjusting?
+        "zOutput": True,        # True (default) or False, to store Z ordinate on output
         "fields": []
     }
 
     issue = False
-    boolProperties = {"trimOuterSpaces", "flattenData", "flattenNames", "allowNulls"}
+    boolProperties = {"trimOuterSpaces", "flattenData", "flattenNames", "allowNulls", "dateAsSeconds", "zAbsolute", "zOutput", "mOutput", "outputAsTable"}
     isPropertySection = False
+    # Contains {<property>: [<value or field>, <error condition if any>]}
+    fieldVerify = {p: ["", ""] for p in ["xField", "yField", "zField", "mField", "mIncrement", "zFactor", "zOffset"]}    # Initialize verify Property section properties that can be Field names
+    fieldNames = set()  # Name of each field (not element) specified in the fields section
 
     if os.path.exists( iniFile):
         with open( iniFile, "r") as iFP:
@@ -368,17 +509,33 @@ def _readINI( iniFile, verbose=True):
                                     if detail.lower() == key.lower():
                                         if detail in boolProperties:
                                             details[ detail] = (value.lower() == "true")
-                                        elif detail in floatProperties:
+                                        elif detail in floatProperties or detail in intProperties:
                                             try:
-                                                details[ detail] = float( value)
+                                                if detail in intProperties:
+                                                    details[ detail] = int( value)
+                                                else:
+                                                    details[ detail] = float( value)
+
+                                                if detail in fieldVerify:
+                                                    # Remove from verification list
+                                                    del fieldVerify[ detail]
                                             except:
                                                 msg = " * Conversion: Illegal specification for property {}, value '{}'".format( detail, value)
-                                                if verbose:
-                                                    print( msg)
-                                                value = 0
-                                                raise Exception( msg)
+                                                if detail in fieldVerify:
+                                                    fieldVerify[ detail][1] = msg
+                                                else:
+                                                    if verbose:
+                                                        print( msg)
+                                                    value = 0
+                                                    #raise Exception( msg)
+                                                    issue = True
                                         else:
                                             details[ detail] = value
+
+                                        if detail in fieldVerify:
+                                            # Update value in verify entry
+                                            fieldVerify[ detail][0] = value
+
                                         break
 
                     else:
@@ -398,6 +555,7 @@ def _readINI( iniFile, verbose=True):
                                 field[ "fieldType"] = ""
                                 field[ "fieldDefault"] = ""
                                 field[ "fieldWidth"] = 0
+                                issue = True
                             else:
                                 field[ "fieldType"] = field[ "fieldType"].lower()
                                 field[ "fieldDefault"] = allowedTypes[ field[ "fieldType"]]
@@ -415,23 +573,33 @@ def _readINI( iniFile, verbose=True):
 
                                     if key not in optionalProperties:
                                         if verbose:
-                                            print( " * Conversion: Field '{}', Illegal Property '{}', ignored!".format( colName, key))
+                                            print( " * Conversion: Field '{}', Illegal Property '{}'!".format( colName, key))
                                         issue = True
                                         continue
 
+                                    if key in noProperties:
+                                        # Check for Properties without parameters
+                                        if key in extractProperties:
+                                            # Add to Extraction List with no value, continue with current value
+                                            field[ "extraction"].append( (optionalProperties[ key], ""))
+                                            continue
+
                                     if index >= len( line):
+                                        # Missing Property?
                                         if verbose:
-                                            print( " * Conversion: Field '{}', Illegal Property '{}', ignored!".format( colName, key))
+                                            print( " * Conversion: Field '{}', Illegal Property '{}'!".format( colName, key))
                                         if key not in extractProperties:
                                             field[ optionalProperties[ key]] = None
+                                        issue = True
                                     else:
                                         value = line[ index].replace( "%20", " ")    # Handle spaces in INI file as %20, restore when saving!
 
                                         if key == "case" and value not in allowedCases:
                                             # Check for invalid Case property
-                                            msg = " * Conversion: Field '{}', Illegal {} '{}', ignored!".format( colName, key, value)
+                                            msg = " * Conversion: Field '{}', Illegal {} '{}'!".format( colName, key, value)
                                             if verbose:
                                                 print( msg)
+                                            issue = True
 
                                         if key in intProperties:
                                             # Validate Integer
@@ -442,9 +610,14 @@ def _readINI( iniFile, verbose=True):
                                                 if verbose:
                                                     print( msg)
                                                 value = 0
-                                                raise Exception( msg)
+                                                #raise Exception( msg)
+                                                issue = True
 
                                         if key in extractProperties:
+                                            if key == "lambda":
+                                                value = " ".join( line[index:])
+                                                index = len(line)
+
                                             # Add to Extraction List
                                             field[ "extraction"].append( (optionalProperties[ key], value))
                                         else:
@@ -453,6 +626,19 @@ def _readINI( iniFile, verbose=True):
                                         index += 1
 
                         details[ "fields"].append( { colName: field})
+                        fieldNames.add( field["fieldName"].lower()) # Add Field to field name list
+
+        # Check for valid field names specified in Properties once fields have been read
+        for propertyName, (fieldName, errorMsg) in fieldVerify.items():
+            if fieldName:   # Was field name specified?
+                if fieldName.lower() not in fieldNames:
+                    if verbose:
+                        if not errorMsg:
+                            errorMsg = " * Conversion: Illegal specification for property {}, field name '{}' does not exist".format( propertyName, fieldName)
+                        print( errorMsg)
+                    issue = True
+                else:
+                    details[ propertyName] = fieldName
 
     return details, issue
 
@@ -463,7 +649,8 @@ def _writeINI( details, iniFile, verbose=True):
     with open( tempFile, "w") as oFP:
         # Save properties
         oFP.write( "[properties]\n")
-        for key, value in details.items():
+        for key in details.keys():
+            value = details[ key]
             if not key.lower() in ["fields", "sourcefilename"]:
                 if key.lower() == "exclusions":
                     for exclude in value:
@@ -497,7 +684,9 @@ def _writeINI( details, iniFile, verbose=True):
                 # Write Extraction Parameters
                 for key, value in fieldDetails.get( "extraction", []):
                     if value:
-                        line += " {} {}".format( key.replace( "extract", ""), value.replace( " ", "%20") if isinstance( value, str) else value)
+                        line += " {} {}".format( key.replace( "extract", ""), value.replace( " ", "%20") if isinstance( value, str) and key != "extractLambda" else value)
+                    else:
+                        line += " {}".format( key.replace( "extract", ""))
 
                 oFP.write( line + "\n")
 
@@ -518,6 +707,47 @@ def _parseDict( keyName, data):
             elif isinstance( value, dict):
                 for result in _parseDict( keyName, value):
                     yield result
+
+def _detectType( elementName, value):
+    # Try to determine field data type from value content, as 'Text'; 'Integer'; 'Float'; or 'Date'
+    try:
+        # Check for Integer
+        check = int( value)
+
+        # No failure, Check for possible epoch date value
+        for check in ["date", "time", "updated", "created", "modified", "start", "end"]:
+            if check in elementName.lower():
+                return "date"
+
+        return "integer"
+    except:
+        pass
+
+    try:
+        # Check for Float
+        check = float( value)
+        return "float"
+    except:
+        pass
+
+    try:
+        # Check for Date
+        if "/" in value or "-" in value:
+            if value.replace( "/", "").replace( "-", "").isdigit():
+                # Likely a Date
+                return "date"
+        if ":" in value:
+            if value.replace( ":", "").replace( ".", "").replace( "Z", "").isDigit():
+                # Likely a Time
+                return "date"
+        if ("/" in value or "-" in value) and ":" in value:
+            if value.replace( ":", "").replace( "/", "").replace( "-", "").replace( " ", "").replace( "T", "").replace("AM", "").replace( "PM", ""):
+                # Likely a Date/Time
+                return "date"
+    except:
+        pass
+
+    return "text"
 
 def convert( sourceFilename, checkPublication=True, verbose=True):
     """Function: convert( <sourceFilename>[, <checkPublication>[, <verbose>]])
@@ -557,11 +787,12 @@ updating the Service, allowing the OverwriteFS script to exit without making dat
     if verbose:
         print( " - Conversion: Input Path '{}', Name '{}'".format( inputPath, inputName))
 
-    #detailsFile = os.path.join( homeFolder, "{}_detail.json".format( inputName))                    # File to Track details like 'pubDate'
     detailsFile = os.path.join( inputPath, "{}.ini".format( inputName))
-    outputFilename = os.path.join( inputPath, "{}.json".format( inputName))                 # Output file
-    #details = {} if not os.path.exists( detailsFile) else json.load( open( detailsFile, "r"))   # Load details file if exists
     details, hadIssues = _readINI( detailsFile, verbose=verbose)
+
+    # Raise issues
+    if hadIssues:
+        raise Exception( "INI file configuration issues detected, please correct")
 
     # Init variables
     features = []
@@ -572,14 +803,27 @@ updating the Service, allowing the OverwriteFS script to exit without making dat
     flattenData = details.get( "flattenData")       # Flatten Sub-Element Data into fields
     flattenNames = details.get( "flattenNames")       # Flatten Sub-Element names into field names
     exclusions = details.get( "exclusions") # Flatten Path exclusions
+    sampleSize = 0 if details.get( "fields") else details.get( "sampleSize", 50)     # Number of Rows to parse to determine field data types for before starting output.
+    dateAsSeconds = details.get( "dateAsSeconds")
+    rowOffset = details.get( "rowOffset")
+    rowLength = details.get( "rowLength")
+    outputExt = details.get( "outputExt")
+
+    # Set output file extension
+    if not outputExt:
+        outputExt = "json"
+        details["outputExt"] = outputExt
+
+    outputFilename = os.path.join( inputPath, "{}.{}".format( inputName, outputExt))                 # Output file
 
     # Init Field issue counters, tallied by _saveFeature
     details[ "unused"] = {}
     details[ "unavailable"] = {}
+    details[ "fieldTypes"] = {}
 
     # Detail known Root Element Types
     rootTypes = {   # '<element list name>': ('<type key>', '<dataset type>')
-        "features": ("type", "Feature Collection")
+        "features": "Feature Collection"
     }
 
     # Access and import Source XML File
@@ -593,13 +837,33 @@ updating the Service, allowing the OverwriteFS script to exit without making dat
     except Exception as e:
         raise Exception( "Failed to load Source file for conversion, Filename: '{}', Error: '{}'".format( sourceFilename, e))
 
+    # Save initial INI
+    if not os.path.exists( detailsFile):
+        # Attempt to identify the rootElement
+        if isinstance( input, dict):
+            key, count = "", 0
+            for k, v in input.items():
+                if isinstance( v, list):
+                    print( " - Conversion: Potential 'rootElement' Key: '{}', Count: {}".format( k, len(v)))
+                    if len(v) > count:
+                        key, count = k, len(v)
+
+            for k in list(rootTypes.keys()) + [key]:
+                if k in input:
+                    details[ "rootElement"] = k
+                    print( " - Conversion: * Key '{}' Selected *".format( k))
+                    break
+
+        _writeINI( details, detailsFile, verbose=verbose)
+
     # Access Elements!
     try:
         items = []
 
         # Detect Elements
         rootElement = details.get( "rootElement")
-        tagName = (rootElement, rootTypes.get( rootElement, ["", rootElement + " (Custom)"]))
+        publicationElement = details.get( "publicationElement")
+        tagName = (rootElement, rootTypes.get( rootElement, rootElement + " (Custom)"))
 
         if rootElement:
             items = [item for item in _parseDict( tagName[0], input)]
@@ -610,37 +874,39 @@ updating the Service, allowing the OverwriteFS script to exit without making dat
             for tag, desc in rootTypes.items():
                 items = [item for item in _parseDict( tag, input)]
                 if items:
-                    tagName = (tag, desc[-1])
+                    tagName = (tag, desc)
                     if not rootElement:
                         details[ "rootElement"] = tag
                     break
             else:
                 if isinstance( input, list):
                     items = input
-                    tagName = ( None, ("", "Collection List"))
+                    tagName = (None, "Collection List")
                 else:
-                    raise Exception( "Unable to identify as FeatureCollection")
+                    raise Exception( "Unable to identify as 'Feature Collection'")
 
         if not items:
             if verbose:
                 print( " * Conversion: No Items available for processing!")
         elif verbose:
-                print( " - Conversion: Successfully identified file as: '{}'".format( tagName[1][-1]))
+                print( " - Conversion: Successfully identified file as: '{}'".format( tagName[1]))
 
     except Exception as e:
         raise Exception( "Failed to locate Json Element '{}', cannot convert Filename: '{}', Error: '{}'".format( tagName[0], sourceFilename, e))
 
     # Check for Last Publication date of file data
-    for tag in ["lastBuildDate", "pubDate", "published", "generated"]:
+    for tag in ([publicationElement] if publicationElement else []) + ["lastBuildDate", "pubDate", "published", "generated"]:
         for value in _parseDict( tag, input):
             try:
-                publicationDate = decodeDatetime( str(value), verbose=verbose)
+                publicationDate = decodeDatetime( str(value), verbose=verbose, asMicroseconds=(not dateAsSeconds))
             except Exception as e:
                 if verbose:
                     print( " * Conversion: Failed to decode Publication Date, error: '{}', Ignoring!".format( e))
 
             if publicationDate:
                 publicationDate = publicationDate.strftime( "%Y/%m/%d %H:%M:%S")    # Format pubDate as string for comparison and storage
+                if not publicationElement:
+                    details["publicationElement"] = tag
                 break
         if publicationDate:
             break
@@ -664,12 +930,15 @@ updating the Service, allowing the OverwriteFS script to exit without making dat
     itemsOut = 0
     noGeometry = 0
     fieldGeometries = 0
+    outputBuffer = []
 
     with open( outputFilename, "w") as outputFP:
         # Initialize
         outputFP.write( (' ' * (0 * indent)) + '{\n')
         outputFP.write( (' ' * (1 * indent)) + '"type": "FeatureCollection",\n')
         outputFP.write( (' ' * (1 * indent)) + '"features": [\n')
+
+        rowStop = 0 if rowLength <= 0 else rowOffset + rowLength
 
         # Parse 'items' and hydrate Features
         for item in items:
@@ -680,6 +949,12 @@ updating the Service, allowing the OverwriteFS script to exit without making dat
                 "properties": {},
                 "geometry": {}
             }
+
+            # Check that we are within Input Row processing range
+            if itemNum < rowOffset:
+                continue
+            if rowStop and itemNum > rowStop:
+                break
 
             # Pull out Fields and Data
             elementNum = 0
@@ -753,6 +1028,12 @@ updating the Service, allowing the OverwriteFS script to exit without making dat
                             feature[ "properties"][ tstName] = {"value": value, "name": name if flattenNames else tstName}
                             fieldList[ tstName] = name if flattenNames else tstName
 
+                            if sampleSize and value:
+                                fieldType = _detectType( name, value)
+                                if fieldType:
+                                    # Save Element Field Type
+                                    details[ "fieldTypes"][tstName] = fieldType
+
                 except Exception as e:
                     issue = True
                     if verbose:
@@ -783,13 +1064,41 @@ updating the Service, allowing the OverwriteFS script to exit without making dat
                         else:
                             feature[ "geometry"] = {"Multi" + geomType: list(geomParts)}
 
-                        fieldGeometries += _saveFeature( feature, details, outputFP, itemNum, itemsOut)
-                        itemsOut += 1
+                        outputBuffer.append( [feature, itemNum])
+
+                    if sampleSize:
+                        sampleSize -= 1
 
                 except Exception as e:
                     issue = True
                     if verbose:
                         print( " * Conversion: Issue processing Item '{}', Error '{}', Feature Ignored!".format( itemNum, e))
+                    traceback.print_exc()
+
+            # Output Buffer when done sampling
+            if outputBuffer and not sampleSize:
+                for feature, num in outputBuffer:
+                    try:
+                        fieldGeometries += _saveFeature( feature, details, outputFP, num, itemsOut)
+                        itemsOut += 1
+
+                    except Exception as e:
+                        if verbose:
+                            print( " * Conversion: Issue processing Item '{}', Error '{}', Feature Ignored!".format( num, e))
+                        traceback.print_exc()
+
+                outputBuffer = []
+
+        # Output remaining Buffer content if any
+        if outputBuffer:
+            for feature, num in outputBuffer:
+                try:
+                    fieldGeometries += _saveFeature( feature, details, outputFP, num, itemsOut)
+                    itemsOut += 1
+
+                except Exception as e:
+                    if verbose:
+                        print( " * Conversion: Issue processing Item '{}', Error '{}', Feature Ignored!".format( num, e))
                     traceback.print_exc()
 
         # Finish and Close Output
@@ -812,7 +1121,7 @@ updating the Service, allowing the OverwriteFS script to exit without making dat
     if not details.get( "fields"):
         fields = list( fieldList.keys())
         fields.sort()
-        details[ "fields"] = [{field: {"fieldName": fieldList[ field]}} for field in fields]
+        details[ "fields"] = [{field: {"fieldName": fieldList[ field], "fieldType": details[ "fieldTypes"].get( field, "")}} for field in fields]
         for field in details[ "fields"]:
             if "type" in field:
                 # Do Not Save Feature Collection Field 'type' element
@@ -821,6 +1130,7 @@ updating the Service, allowing the OverwriteFS script to exit without making dat
     # Update Details file before exit
     details[ "lastPublicationDate"] = publicationDate if publicationDate else ""
     details[ "sourceFilename"] = inputFilename
+    del details[ "fieldTypes"]
 
     if not hadIssues:
         _writeINI( details, detailsFile, verbose=verbose)

@@ -149,7 +149,7 @@ class ERDDAPHandler:
                     server_url = erddap_dict['url'] + "/tabledap/"
                     setattr(server_obj, 'server', server_url)
 
-                    server_info_url = erddap_dict['url'] + "/info/index.json"
+                    server_info_url = erddap_dict['url'] + "/info/index.json?itemsPerPage=100000"
                     setattr(server_obj, 'serverInfo', server_info_url)
 
                     return server_obj
@@ -430,6 +430,8 @@ coastwatch = ERDDAPHandler(
         "latitudeFieldName": "latitude (degrees_north)",
         "longitudeFieldName": "longitude (degrees_east)"}
     )
+
+#https://erddap.secoora.org/erddap/info/index.json?itemsPerPage=10000
 
 custom_server = ERDDAPHandler(
     server= None,
