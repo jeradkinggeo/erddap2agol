@@ -36,7 +36,11 @@ def publishTable(item_prop: dict, publish_params: dict, path):
     
     publish_params["location_type"] = "coordinates"
     publish_params["latitudeFieldName"] = "latitude__degrees_north_"  
-    publish_params["longitudeFieldName"] = "longitude__degrees_east_"  
+    publish_params["longitudeFieldName"] = "longitude__degrees_east_"
+
+    #Will need to specify these bools 
+    #publish_params["hasZ"] = True 
+    #publish_params["hasM"] = False  
     
     try:
         item = gis.content.add(item_prop, path, HasGeometry=True)
