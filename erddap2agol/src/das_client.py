@@ -127,6 +127,7 @@ def convertFromUnixDT(time_tuple):
 
     
 #Expand this function to check the dtype of attributes 
+# Add string handling
 def getActualAttributes(dasJson, erddapObject: ec.ERDDAPHandler) -> list:
     attributes_set = set() 
     for key, value in dasJson.items():

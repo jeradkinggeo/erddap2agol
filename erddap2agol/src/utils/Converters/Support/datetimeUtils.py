@@ -10,9 +10,9 @@
 
 import datetime
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
-def decodeDatetime( dateString, verbose=True, utcOut=False, returnFormat=False):
+def decodeDatetime( dateString, verbose=True, utcOut=False, returnFormat=False, asMicroseconds=True):
     """Function: decodeDatetime( <dateString>[, <verbose>[, <utcOut>[, <returnFormat>]]]
 
     Accepts String containing Datetime properties, decodes components to output
@@ -36,6 +36,11 @@ def decodeDatetime( dateString, verbose=True, utcOut=False, returnFormat=False):
 
       <returnFormat> = (optional) Also Output Format string.
                        Default: False, only output Datetime Object
+
+   <asMicroseconds> = (optional) True or False, epoch time represented in Microseconds?
+                       Up to 13 digit Integer as Microseconds, True.
+                       Up to 10 digit Integer or Float as Seconds, False.
+                       Default: True
 """
     # Decode date digit
     def decodeNumber( part, haveDay, haveMonth, haveYear):
@@ -77,7 +82,7 @@ def decodeDatetime( dateString, verbose=True, utcOut=False, returnFormat=False):
         # Check for +- Timestamp Value
         try:
             totalSeconds = float( dateString)
-            if abs( totalSeconds) >= 10000000000.0:
+            if asMicroseconds:
                 totalSeconds /= 1000    # Divide to get Micro Seconds
 
             if totalSeconds < 0.0:
