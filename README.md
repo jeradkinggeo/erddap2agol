@@ -47,3 +47,8 @@ A feature service is created and populated with the dataset returned by the ERDD
 -Ensure visibility of updates with update logs <br />
 -Read configuration file and/or database to identify items for update <br />  
 
+### Attributions
+Update / Overwrite Feature Service v2.1.4 <br />
+By: Deniz Karagulle & Paul Dodd, Software Product Release, Esri 
+
+
