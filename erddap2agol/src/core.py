@@ -112,9 +112,9 @@ def agolPublish(gcload, attribute_list, isNRT: int) -> None:
 
     gis = aw.agoConnect()
     propertyDict = aw.makeItemProperties(gcload)
-    publish_params = gcload.geoParams
+    geom_params = aw.defineGeoParams(gcload)
 
-    table_id = aw.publishTable(propertyDict, publish_params, filepath)
+    table_id = aw.publishTable(propertyDict, geom_params, filepath)
     ul.updateLog(gcload.datasetid, table_id, "None", full_url, gcload.end_time, ul.get_current_time(), isNRT)
     ec.cleanTemp()
 
@@ -143,6 +143,7 @@ def NRTUpdateAGOL() -> None:
     nrt_dict  = lm.NRTFindAGOL()
 
     for datasetid, itemid in nrt_dict.items():
+        # try: 
         startWindow, endWindow = lm.movingWindow(isStr=True)
         das_resp = ec.ERDDAPHandler.getDas(gcload, datasetid)
         parsed_response = dc.convertToDict(dc.parseDasResponse(das_resp))
@@ -157,9 +158,10 @@ def NRTUpdateAGOL() -> None:
 
         url = gcload.generate_url(False, attribute_list)
 
-
         gis = aw.agoConnect()
         
         content = gis.content.get(itemid)
-        OverwriteFS.overwriteFeatureService(content, url, ignoreAge = True)
+
+        OverwriteFS.overwriteFeatureService(content, url, preserveProps=False, verbose=True, ignoreAge = True)
+        # except Exception as e:
     
