@@ -121,14 +121,23 @@ def agolPublish(gcload, attribute_list, isNRT: int) -> None:
 # When users provide multiple datasets for manual upload 
 # Terminal
 def processListInput(dataset_list, gcload, isNRT: int):
-    for dataset in dataset_list:
-        attribute_list = parseDas(gcload, dataset)
-        if attribute_list is None:
-            print(f"\nNo data found for dataset {dataset}, trying next.")
-            continue
-        else:
+    if isNRT == 0:
+        for dataset in dataset_list:
+            attribute_list = parseDas(gcload, dataset)
+            if attribute_list is None:
+                print(f"\nNo data found for dataset {dataset}, trying next.")
+                continue
+            else:
+                agolPublish(gcload, attribute_list, isNRT)           
+        ec.cleanTemp()
+    else:
+        for dataset in dataset_list:
+            attribute_list = parseDasNRT(gcload, dataset)
+            if attribute_list is None:
+                continue
+            
             agolPublish(gcload, attribute_list, isNRT)           
-    ec.cleanTemp()
+        ec.cleanTemp()
 
 
 
