@@ -128,22 +128,46 @@ def convertFromUnixDT(time_tuple):
     
 #Expand this function to check the dtype of attributes 
 # Add string handling
-def getActualAttributes(dasJson, erddapObject: ec.ERDDAPHandler) -> list:
-    attributes_set = set() 
-    for key, value in dasJson.items():
-        if isinstance(value, dict):
-            #added depth to the list of keys to ignore, revisit this later
-            #added it back without changing anything hope nothing breaks :3
-            # it broke
-            if "actual_range" in value and "_qc_" not in key and key not in {"latitude", "longitude", "time"}:
-                if "coverage_content_type" in value and value["coverage_content_type"].get("value") == "qualityInformation":
-                    continue
-                attributes_set.add(key)
+# def getActualAttributes(dasJson, erddapObject: ec.ERDDAPHandler) -> list:
+#     attributes_set = set() 
+#     for key, value in dasJson.items():
+#         if isinstance(value, dict):
+#             if "actual_range" in value and "_qc_" not in key and key not in {"latitude", "longitude", "time"}:
+#                 if "coverage_content_type" in value and value["coverage_content_type"].get("value") == "qualityInformation":
+#                     continue
+#                 attributes_set.add(key)
 
-    setattr(erddapObject, "attributes", list(attributes_set))
-    return list(attributes_set)
+#     setattr(erddapObject, "attributes", list(attributes_set))
+#     return list(attributes_set)
 
 def displayAttributes(timeintv: int , attributes: list) -> None:
     print(f"\nThere are {timeintv} days worth of records")
     print(f"\nAttributes: {attributes}")
 
+
+
+def getActualAttributes(dasJson, erddapObject: ec.ERDDAPHandler) -> list:
+    attributes_set = set()
+    for var_name, var_attrs in dasJson.items():
+        if not isinstance(var_attrs, dict):
+            continue
+
+        if "_qc_" in var_name or var_name in {"latitude", "longitude", "time"}:
+            continue
+
+        coverage_content_type_entry = var_attrs.get('coverage_content_type', {})
+        coverage_content_type = coverage_content_type_entry.get('value', '')
+        if coverage_content_type == 'qualityInformation':
+            continue
+
+        # Include if 'actual_range' exists
+        if 'actual_range' in var_attrs:
+            attributes_set.add(var_name)
+            continue
+
+        # Include string variables with more than one attribute
+        if len(var_attrs) == 1:
+            attributes_set.add(var_name)
+
+    setattr(erddapObject, "attributes", list(attributes_set))
+    return list(attributes_set)

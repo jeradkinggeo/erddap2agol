@@ -1,6 +1,7 @@
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer, FeatureLayerCollection
 from . import erddap_client as ec
+from . import das_client as dc
 import copy, json
 
 gis = GIS("home")
@@ -14,10 +15,11 @@ def agoConnect() -> None:
     except Exception as e:
         print(f"An error occurred connecting to ArcGIS Online: {e}")
 
-#Important function and should be improved
-def makeItemProperties(datasetid: "ec.ERDDAPHandler") -> dict:
-    dataid = datasetid.datasetid
-    attribute_tags = datasetid.attributes
+# Need to work out the rest of the metadata in item props
+def makeItemProperties(erddapObj: "ec.ERDDAPHandler", accessLevel = None) -> dict:
+    dataid = erddapObj.datasetid
+    attribute_tags = erddapObj.attributes
+
     tags = ["erddap2agol", f"{dataid}"]
 
     if attribute_tags is not None:
@@ -29,14 +31,34 @@ def makeItemProperties(datasetid: "ec.ERDDAPHandler") -> dict:
         "item_type": "Feature Service",
         "tags": tags
     }
+
+    dasJson = dc.openDasJson(dataid)
+    metadata = dasJson.get("NC_Global", {})
+    if "license" in metadata and metadata["license"] is not None:
+        ItemProperties["licenseInfo"] = metadata["license"].get("value", "")
+
+    print(ItemProperties)
     return ItemProperties
 
+def defineGeoParams(erddapObj: ec.ERDDAPHandler) -> dict:
+    # Hard code coordinate parameters presuming these have already
+    # been checked to exist 
+
+    geom_params = erddapObj.geoParams
+
+    attribute_list = erddapObj.attributes
+    #This doesnt work, we might have to publish first, then update the properties
+    for attribute in attribute_list:
+        if "depth" in attribute or "z" in attribute:
+            geom_params["hasZ"] = True
+        
+
+    return geom_params
+        
+
 #Also important and should be improved 
-def publishTable(item_prop: dict, publish_params: dict, path):
-    
-    publish_params["location_type"] = "coordinates"
-    publish_params["latitudeFieldName"] = "latitude__degrees_north_"  
-    publish_params["longitudeFieldName"] = "longitude__degrees_east_"  
+def publishTable(item_prop: dict, geom_params: dict, path):
+    publish_params = geom_params
     
     try:
         item = gis.content.add(item_prop, path, HasGeometry=True)
@@ -51,7 +73,7 @@ def publishTable(item_prop: dict, publish_params: dict, path):
 def searchContentByTag(tag: str) -> list:
     try:
         search_query = f'tags:"{tag}" AND owner:{gis.users.me.username} AND type:Feature Service'
-        search_results = gis.content.search(query=search_query, max_items=100)
+        search_results = gis.content.search(query=search_query, max_items=1000)
 
         # Check if any items were found
         if not search_results:
