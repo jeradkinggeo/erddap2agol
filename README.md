@@ -1,6 +1,6 @@
 # ERDDAP2AGOL v.0.4.2 
 
-## Alert: I am aware of the disruptions cause by the new AGOL update and will be working to ensure compatibility with the new Python 11.0 Runtime in addition to 10.0 & 9.0 Runtime compatibility.   
+## Alert: I am aware of the disruptions caused by the new AGOL update and will be working to ensure compatibility with the new Python 11.0 Runtime in addition to 10.0 & 9.0 Runtime compatibility.   
 
 The goal of this project is to establish a connection between ERDDAP services and ArcGIS Online (AGOL). Erddap2agol will be a "hands-off" ETL program to automatically update and manage ERDDAP data hosted on ArcGIS Online. 
 Erddap2agol is a service provided by the Gulf of Mexico Ocean Observing System (GCOOS) and is intended for use by other IOOS regional associations or data providers using ERDDAP. As this project is in active development, please
